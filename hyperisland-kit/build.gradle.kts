@@ -45,11 +45,11 @@ android {
 mavenPublishing {
 
 
-    coordinates("io.github.d4viddf", "hyperisland_kit", "0.1.0")
+    coordinates("io.github.d4viddf", "hyperisland_kit", "0.1.1")
 
     pom {
         name = "HyperIsland ToolKit"
-        description = "A mathematics calculation library."
+        description = "A simple Kotlin library for creating notifications on Xiaomi's HyperIsland. Abstracts away the complex JSON and Bundle-linking, allowing you to build HyperIsland notifications with a few lines of Kotlin."
         inceptionYear = "2025"
         url = "https://github.com/D4vidDf/HyperIsland-ToolKit"
         licenses {
