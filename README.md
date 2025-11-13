@@ -1,124 +1,62 @@
-# **HyperIsland Kit 🏝️**
+# HyperIsland Kit 🏝️
 <img alt="Version 0.1.2" src="https://img.shields.io/badge/version-0.1.2-blue"/>
 
-A simple, fluent Kotlin builder library for creating notifications on Xiaomi's HyperIsland. This library abstracts away the complex JSON and Bundle-linking, allowing you to build HyperIsland notifications with a few lines of Kotlin.
+A simple, fluent Kotlin builder for creating notifications on Xiaomi's HyperIsland.
 
-## **Why Use HyperIsland Kit?**
+This library abstracts away the complex JSON and `Bundle` linking, allowing you to build rich HyperIsland notifications with clean, readable Kotlin.
 
-* **Fluent Builder:** No more manual JSON string building.  
-* **Type-Safe:** Uses Kotlin data classes to ensure your notification structure is valid.  
-* **Auto-Bundling:** Automatically links your PendingIntent actions and Icon bitmaps to the correct keys in the JSON payload.  
-* **Kotlin-First:** Written in pure Kotlin with a focus on simplicity.  
-* **Well-Documented:** KDoc explains every builder method and its purpose.
+## Features
+* Fluent, chained Kotlin builder
+* No more manual JSON building
+* Automatically handles all `miui.focus.action_` prefixing
+* Full support for all core features:
+    * Action Buttons (Icon, Text, or Progress)
+    * Timers (Countdown & Count-Up)
+    * Progress Bars (Linear & Circular)
+    * Custom Icons & Colors
 
-## **Setup**
+---
 
-**Note:** The library is not yet published. Once it is, you can follow these steps.
+## 📚 Documentation (Read This!)
 
-1. Add the mavenCentral() repository to your root settings.gradle.kts (it's usually there by default).  
-2. Add the dependency to your app's build.gradle.kts file:
-``` kotlin
+**This library is simple to use, but the Xiaomi API is complex.**
+
+For example, all notifications require a **two-step build process** and **action buttons** require special setup.
+
+We **strongly recommend** reading the official Wiki to understand how to build your notifications correctly.
+
+# ➡️ [Go to the Full GitHub Wiki](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki)
+
+**Key Wiki Pages:**
+* **[Getting Started](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki/Getting-Started):** Explains installation and the **critical** two-step build process.
+* **[Handling Actions & Intents](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki/Handling-Actions-&-Intents):** Explains how to make buttons work.
+* **[Notification Types & Examples](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki/Notification-Types-&-Examples):** A "cookbook" for timers, progress bars, etc.
+
+---
+
+## Installation
+
+The library is available on **Maven Central**.
+
+1.  Add `mavenCentral()` to your repositories in your root `settings.gradle.kts` (it's usually there by default).
+
+2.  Add the dependency to your app-level `build.gradle.kts` file:
+```gradle
 dependencies {
-    implementation("io.github.d4viddf.hyperisland-kit:hyperisland_kit:0.1.2")  
+    implementation("io.github.d4viddf:hyperisland-kit:0.1.2")
 }
 ```
-## **How to Use**
+License
+Copyright 2024 D4vidDf
 
-### **1\. Check for Support**
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-First, always check if the device supports HyperIsland. 
-``` kotlin
-import com.d4viddf.hyperisland_kit.HyperIslandNotification
+    [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-if (HyperIslandNotification.isSupported(context)) {  
-    // The device is a Xiaomi device with HyperIsland support  
-    // ... proceed to build the notification  
-}
-```
-### **2\. Define Keys and Resources**
-
-Define unique string keys for any pictures or actions you want to use.  
-``` kotlin
-// Define unique keys  
-const val PIC_KEY_APP_OPEN = "pic.app.open"
-
-// Create your standard Android PendingIntent  
-val openAppIntent = PendingIntent.getActivity(  
-    context, 0, Intent(context, MainActivity::class.java),  
-    PendingIntent.FLAG_IMMUTABLE  
-)
-
-// Create a HyperPicture (this converts your vector to a bitmap)  
-val appPicture = HyperPicture(PIC_KEY_APP_OPEN, context, R.drawable.ic_my_app_icon)
-```
-### **3\. Build the HyperIsland Extras**
-
-Use the HyperIslandNotification.Builder to create the special Bundle.  
-``` kotlin
-val hyperIslandExtras = HyperIslandNotification  
-    .Builder(context, "myDemoApp", "Your app is running")  
-    // 1\. (Optional) For "drag-to-open"  
-    .setSmallWindowTarget("com.github.d4viddf.hyperislandkit.demo.MainActivity")  
-    // 2\. Define the Expanded Notification Panel (Chat or Base)  
-    .setBaseInfo(  
-        title = "App Open Demo",  
-        content = "Tap or drag to open the app",  
-        pictureKey = PIC_KEY_APP_OPEN  
-    )  
-    // 3\. Define the Expanded Island  
-    .setBigIslandInfo(  
-        ImageTextInfoLeft(  
-            picInfo = PicInfo(type = 1, pic = PIC_KEY_APP_OPEN),  
-            textInfo = TextInfo(title = "App Demo", content = "Running")  
-        )  
-    )  
-    // 4\. Define the Summary Island  
-    .setSmallIslandIcon(PIC_KEY_APP_OPEN)  
-    // 5\. Add the pictures to the bundle  
-    .addPicture(appPicture)  
-    // 6\. Build the final Bundle  
-    .buildExtras()
-```
-### **4\. Add to your Notification**
-
-Finally, add the generated extras to your standard NotificationCompat.Builder and fire the notification.  
-``` kotlin
-val notification = NotificationCompat.Builder(context, YOUR_CHANNEL_ID)  
-    .setSmallIcon(R.drawable.ic_stat_notification)  
-    .setContentTitle("App Open Demo")  
-    .setContentText("Tap or drag to open the app.")  
-    // This is the standard "tap-to-open" 
-    .setContentIntent(openAppIntent)  
-    // This adds all the HyperIsland magic  
-    .addExtras(hyperIslandExtras)  
-    .build()
-
-NotificationManagerCompat.from(context).notify(123, notification)
-```
-## **API Overview**
-
-### **Main Builder Methods**
-
-| Method                                   | Description                                                                               |
-|:-----------------------------------------|:------------------------------------------------------------------------------------------|
-| **.setChatInfo(...)**                    | Sets the expanded notification panel to the "Chat" style.                                 |
-| **.setBaseInfo(...)**                    | Sets the expanded notification panel to the "Base" style (an alternative to setChatInfo). |
-| **.setSmallIsland(...)**                 | Sets the summary island to the A/B zone text/icon style.                                  |
-| **.setSmallIslandIcon(...)**             | Sets the summary island to a simple icon.                                                 |
-| **.setSmallIslandCircularProgress(...)** | Sets the summary island to the icon \+ circular progress style.                           |
-| **.setBigIslandInfo(...)**               | Sets the expanded island to the simple text \+ icon style.                                |
-| **.setBigIslandCountdown(...)**          | Sets the expanded island to the icon \+ countdown timer style.                            |
-| **.setBigIslandCountUp(...)**            | Sets the expanded island to the icon \+ count-up timer style.                             |
-| **.setBigIslandProgressCircle(...)**     | Sets the expanded island to the icon \+ circular progress style.                          |
-| **.setProgressBar(...)**                 | Adds a linear progress bar to the bottom of the expanded panel.                           |
-| **.setSmallWindowTarget(...)**           | Enables the "drag-to-open" app feature.                                                   |
-
-### **Helper Objects**
-
-* HyperAction(key, ...): Create this for any button you want to add.  
-* HyperPicture(key, ...): Create this for any icon/image you want to display.  
-* **Remember:** You must call .addAction(myAction) and .addPicture(myPicture) for every action and picture you use.
-
-## **License**
-
-This project is licensed under the Apache 2.0 License \- see the LICENSE file for details.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUTANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
