@@ -25,7 +25,7 @@ For example, all notifications require a **two-step build process** and **action
 
 We **strongly recommend** reading the official Wiki to understand how to build your notifications correctly.
 
-# ➡️ [Go to the Full GitHub Wiki](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki)
+## ➡️ [Go to the Full GitHub Wiki](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki)
 
 **Key Wiki Pages:**
 * **[Getting Started](https://github.com/D4vidDf/HyperIsland-ToolKit/wiki/Getting-Started):** Explains installation and the **critical** two-step build process.
@@ -46,7 +46,7 @@ dependencies {
     implementation("io.github.d4viddf:hyperisland-kit:0.1.2")
 }
 ```
-License
+## License
 Copyright 2024 D4vidDf
 
 Licensed under the Apache License, Version 2.0 (the "License");
