@@ -3,7 +3,7 @@ package com.d4viddf.hyperisland_kit.demo
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues // Import PaddingValues
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,7 +20,6 @@ import androidx.navigation.NavController
 
 @Composable
 fun DemoListScreen(
-    // --- REMOVED MODIFIER PARAMETER ---
     navController: NavController
 ) {
     val context = LocalContext.current
@@ -29,16 +28,14 @@ fun DemoListScreen(
     CheckPermissionLost(navController = navController)
 
     LazyColumn(
-        // --- MODIFIED MODIFIER ---
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        // --- ADDED CONTENT PADDING ---
         contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
-        // Card 1: App Open Demo
+        // --- 1. Simple Demos ---
         item {
             DemoCard(
                 title = "App Open Demo",
@@ -49,29 +46,29 @@ fun DemoListScreen(
             )
         }
 
-        // Card 2: Chat Notification Demo
         item {
             DemoCard(
-                title = "Chat Notification",
-                description = "Shows a 'chat' style (expanded) and simple (summary) view with a progress button.",
+                // --- UPDATED ---
+                title = "Chat Info (Text Action)",
+                description = "Shows a 'chat' style panel with a text-only 'Open App' action button.",
                 onClick = {
                     DemoNotificationManager.showChatNotification(context)
                 }
             )
         }
 
-        // Card 3: Countdown Notification Demo
         item {
             DemoCard(
-                title = "Countdown Notification",
-                description = "Shows a 15-minute countdown in chat, big island (expanded), and summary views.",
+                // --- UPDATED ---
+                title = "Chat Info (Icon Action)",
+                description = "Uses 'chatInfo' to show a simple panel with an 'Open App' icon button.",
                 onClick = {
-                    DemoNotificationManager.showCountdownNotification(context)
+                    DemoNotificationManager.showSimpleSmallIslandNotification(context)
                 }
             )
         }
 
-        // Card 4: Linear Progress Bar
+        // --- 2. Progress Bars ---
         item {
             DemoCard(
                 title = "Linear Progress Bar",
@@ -82,7 +79,6 @@ fun DemoListScreen(
             )
         }
 
-        // Card 5: Circular Progress Demo
         item {
             DemoCard(
                 title = "Circular Progress Demo",
@@ -93,7 +89,17 @@ fun DemoListScreen(
             )
         }
 
-        // Card 6: Count-Up Timer
+        // --- 3. Timers ---
+        item {
+            DemoCard(
+                title = "Countdown Notification",
+                description = "Shows a 15-minute countdown in chat, big island (expanded), and summary views.",
+                onClick = {
+                    DemoNotificationManager.showCountdownNotification(context)
+                }
+            )
+        }
+
         item {
             DemoCard(
                 title = "Count-Up Timer",
@@ -104,20 +110,19 @@ fun DemoListScreen(
             )
         }
 
-        // Card 7: Simple Small Island
+        // --- 4. Multi-Action ---
         item {
             DemoCard(
-                title = "Simple Small Island",
-                description = "Uses 'baseInfo' and shows a simple icon (summary) and icon+text (expanded).",
+                title = "Multi-Action Demo",
+                description = "Shows a progress button and a standard 'Close' button. Tap 'Close' to dismiss or 'Stop' to see a toast.",
                 onClick = {
-                    DemoNotificationManager.showSimpleSmallIslandNotification(context)
+                    DemoNotificationManager.showMultiActionNotification(context)
                 }
             )
         }
     }
 }
 
-// ... (DemoCard composable is the same) ...
 @Composable
 fun DemoCard(title: String, description: String, onClick: () -> Unit) {
     Card(

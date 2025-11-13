@@ -16,10 +16,20 @@
             android:theme="@style/Theme.HyperIslandToolKit">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false">
+
+            <intent-filter>
+                <action android:name="com.d4viddf.hyperisland_kit.demo.ACTION_CLICK_AND_CANCEL" />
+                <action android:name="com.d4viddf.hyperisland_kit.demo.ACTION_SHOW_TOAST_ONLY" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

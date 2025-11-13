@@ -45,7 +45,7 @@ android {
 mavenPublishing {
 
 
-    coordinates("io.github.d4viddf", "hyperisland_kit", "0.1.1")
+    coordinates("io.github.d4viddf", "hyperisland_kit", "0.1.2")
 
     pom {
         name = "HyperIsland ToolKit"
