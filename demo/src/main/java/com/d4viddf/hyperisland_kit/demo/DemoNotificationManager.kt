@@ -399,8 +399,7 @@ object DemoNotificationManager {
             actionIntentType = 2, // 2 for Broadcast
             isProgressButton = true,
             progress = 10,
-            colorProgress = "#D9E0FA",
-
+            progressColor = "#FF3B30",
         )
         val closeAction = HyperAction(
             key = ACTION_KEY_CLOSE_NOTIFICATION,
