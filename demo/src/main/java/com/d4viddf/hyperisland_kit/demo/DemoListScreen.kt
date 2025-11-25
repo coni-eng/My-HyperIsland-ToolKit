@@ -24,7 +24,6 @@ fun DemoListScreen(
 ) {
     val context = LocalContext.current
 
-    // Check if permission was revoked while app was in background
     CheckPermissionLost(navController = navController)
 
     LazyColumn(
@@ -48,7 +47,6 @@ fun DemoListScreen(
 
         item {
             DemoCard(
-                // --- UPDATED ---
                 title = "Chat Info (Text Action)",
                 description = "Shows a 'chat' style panel with a text-only 'Open App' action button.",
                 onClick = {
@@ -59,11 +57,31 @@ fun DemoListScreen(
 
         item {
             DemoCard(
-                // --- UPDATED ---
                 title = "Chat Info (Icon Action)",
                 description = "Uses 'chatInfo' to show a simple panel with an 'Open App' icon button.",
                 onClick = {
                     DemoNotificationManager.showSimpleSmallIslandNotification(context)
+                }
+            )
+        }
+
+        // --- NEW DEMO ---
+        item {
+            DemoCard(
+                title = "Right Image Demo",
+                description = "Shows content with an image on the right side of the Expanded Island.",
+                onClick = {
+                    DemoNotificationManager.showRightImageNotification(context)
+                }
+            )
+        }
+
+        item {
+            DemoCard(
+                title = "Split Info (Left & Right)",
+                description = "Shows content on both the left (Icon+Text) and right (Text only) sides of the Expanded Island.",
+                onClick = {
+                    DemoNotificationManager.showSplitIslandNotification(context)
                 }
             )
         }

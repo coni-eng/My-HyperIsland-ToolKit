@@ -14,16 +14,18 @@ import io.github.d4viddf.hyperisland_kit.HyperAction
 import io.github.d4viddf.hyperisland_kit.HyperIslandNotification
 import io.github.d4viddf.hyperisland_kit.HyperPicture
 import io.github.d4viddf.hyperisland_kit.models.ImageTextInfoLeft
+import io.github.d4viddf.hyperisland_kit.models.ImageTextInfoRight
 import io.github.d4viddf.hyperisland_kit.models.PicInfo
 import io.github.d4viddf.hyperisland_kit.models.TextInfo
 import io.github.d4viddf.hyperisland_kit.models.TimerInfo
 import java.util.concurrent.TimeUnit
 
-// --- (Keys are unchanged) ---
+// --- Keys ---
 private const val ACTION_KEY_TAKEN = "action.taken"
 private const val ACTION_KEY_APP_OPEN = "action.app.open"
 private const val ACTION_KEY_STOP_PROGRESS = "action.stop"
 private const val ACTION_KEY_CLOSE_NOTIFICATION = "action.close"
+
 private const val PIC_KEY_MEDICATION = "pic.medication"
 private const val PIC_KEY_DEMO_ICON = "pic.demo.icon"
 private const val PIC_KEY_PROGRESS = "pic.progress"
@@ -32,8 +34,9 @@ private const val PIC_KEY_SIMPLE = "pic.simple"
 private const val PIC_KEY_APP_OPEN = "pic.app.open"
 private const val PIC_KEY_STOP_ICON = "pic.stop"
 private const val PIC_KEY_CLOSE_ICON = "pic.close"
+private const val PIC_KEY_RIGHT_SIDE = "pic.right.side" // --- NEW KEY ---
 
-private const val TAG = "DemoNotifManager" // Tag for logging
+private const val TAG = "DemoNotifManager"
 
 object DemoNotificationManager {
 
@@ -59,7 +62,6 @@ object DemoNotificationManager {
         )
     }
     private fun createAppOpenIntent(context: Context, requestCode: Int = 0): PendingIntent {
-        Log.d(TAG, "Creating Activity PendingIntent with request code: $requestCode")
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -72,7 +74,6 @@ object DemoNotificationManager {
         toastMessage: String?,
         requestCode: Int
     ): PendingIntent {
-        Log.d(TAG, "Creating Broadcast PendingIntent with action: $action, request code: $requestCode")
         val intent = Intent(context, NotificationActionReceiver::class.java).apply {
             this.action = action
             putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
@@ -83,6 +84,124 @@ object DemoNotificationManager {
         return PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
+    // --- NEW DEMO: Right Image Notification ---
+    fun showRightImageNotification(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        showSupportToast(context)
+
+        val notificationId = getUniqueNotificationId()
+        val title = "Right Image Demo"
+        val text = "Expanded island has an image on the right."
+
+        val openAppIntent = createAppOpenIntent(context, 0)
+
+        val leftPic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+        val rightPic = HyperPicture(PIC_KEY_RIGHT_SIDE, context, R.drawable.rounded_medication_24) // Image for the right
+
+        // Define Left Side
+        val leftInfo = ImageTextInfoLeft(
+            picInfo = PicInfo(type = 1, pic = PIC_KEY_DEMO_ICON),
+            textInfo = TextInfo(title = "Left Info")
+        )
+
+        // Define Right Side with Image
+        val rightInfo = ImageTextInfoRight(
+            picInfo = PicInfo(type = 1, pic = PIC_KEY_RIGHT_SIDE), // <-- Image on right
+            textInfo = TextInfo(title = "Right", content = "With Image")
+        )
+
+        val hyperIslandBuilder = HyperIslandNotification
+            .Builder(context, "demoApp", title)
+            .setChatInfo(
+                title = "Right Image Demo",
+                content = "Check the expanded island",
+                pictureKey = PIC_KEY_DEMO_ICON
+            )
+            .setBigIslandInfo(
+                left = leftInfo,
+                right = rightInfo
+            )
+            .setSmallIsland(
+                aZone = leftInfo,
+                bZone = rightInfo
+            )
+            .addPicture(leftPic)
+            .addPicture(rightPic)
+
+        val resourceBundle = hyperIslandBuilder.buildResourceBundle()
+        val jsonParam = hyperIslandBuilder.buildJsonParam()
+
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+
+        Log.d(TAG, "showRightImageNotification: Posting notification $notificationId")
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. Split Info (New Demo)
+    // -------------------------------------------------------------------------
+    fun showSplitIslandNotification(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        showSupportToast(context)
+
+        val notificationId = getUniqueNotificationId()
+        val title = "Split Island"
+        val text = "Left & Right content on Big Island."
+        val openAppIntent = createAppOpenIntent(context, 0)
+
+        val demoPicture = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val leftInfo = ImageTextInfoLeft(
+            picInfo = PicInfo(type = 1, pic = PIC_KEY_DEMO_ICON),
+            textInfo = TextInfo(title = "Left")
+        )
+        val rightInfo = ImageTextInfoRight(
+            textInfo = TextInfo(title = "Right", content = "Content")
+        )
+
+        val hyperIslandBuilder = HyperIslandNotification
+            .Builder(context, "demoApp", title)
+            .setChatInfo(
+                title = "Split Info",
+                content = "Left & Right Content",
+                pictureKey = PIC_KEY_DEMO_ICON
+            )
+            .setBigIslandInfo(
+                left = leftInfo,
+                right = rightInfo
+            )
+            .setSmallIsland(
+                aZone = leftInfo,
+                bZone = rightInfo
+            )
+            .addPicture(demoPicture)
+
+        val resourceBundle = hyperIslandBuilder.buildResourceBundle()
+        val jsonParam = hyperIslandBuilder.buildJsonParam()
+
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+
+        Log.d(TAG, "showSplitIslandNotification: Posting notification $notificationId")
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // --- Existing Demos ---
 
     fun showChatNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
@@ -93,20 +212,18 @@ object DemoNotificationManager {
         val text = "This demonstrates the 'ChatInfo' template."
         val openAppIntent = createAppOpenIntent(context, 0)
 
-        // This is an Activity, so type = 1
         val takenPendingIntent = createAppOpenIntent(context, 1)
 
         val takenAction = HyperAction(
             key = ACTION_KEY_TAKEN,
             title = "Open App",
             pendingIntent = takenPendingIntent,
-            actionIntentType = 1, // 1 for Activity
+            actionIntentType = 1,
             actionBgColor = "#007AFF"
         )
 
         val medPicture = HyperPicture(PIC_KEY_MEDICATION, context, R.drawable.rounded_medication_24)
 
-        // 1. Create the builder and add actions/pics
         val hyperIslandBuilder = HyperIslandNotification
             .Builder(context, "demoApp", title)
             .setSmallWindowTarget("${context.packageName}.MainActivity")
@@ -114,7 +231,7 @@ object DemoNotificationManager {
                 title = "Ibuprofen",
                 content = "Next dose: 30 minutes",
                 pictureKey = PIC_KEY_MEDICATION,
-                actionKeys = listOf(ACTION_KEY_TAKEN) // Pass key to chatInfo
+                actionKeys = listOf(ACTION_KEY_TAKEN)
             )
             .setBigIslandInfo(
                 createSimpleAZone(PIC_KEY_MEDICATION, "Ibuprofen")
@@ -123,20 +240,17 @@ object DemoNotificationManager {
             .addAction(takenAction)
             .addPicture(medPicture)
 
-        // 2. Build the two separate parts
         val resourceBundle = hyperIslandBuilder.buildResourceBundle()
         val jsonParam = hyperIslandBuilder.buildJsonParam()
 
-        // 3. Create the notification
         val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(openAppIntent)
-            .addExtras(resourceBundle) // <-- Add the resource bundle here
+            .addExtras(resourceBundle)
             .build()
 
-        // 4. Add the JSON param string AFTER build
         notification.extras.putString("miui.focus.param", jsonParam)
 
         Log.d(TAG, "showChatNotification: Posting notification $notificationId")
@@ -156,7 +270,7 @@ object DemoNotificationManager {
         val hyperIslandBuilder = HyperIslandNotification
             .Builder(context, "demoApp", title)
             .setChatInfo(title = "Pizza in oven", timer = countdownTimer, pictureKey = PIC_KEY_DEMO_ICON)
-            .setBigIslandCountdown(countdownTime, PIC_KEY_DEMO_ICON) // No actions
+            .setBigIslandCountdown(countdownTime, PIC_KEY_DEMO_ICON)
             .setSmallIslandIcon(PIC_KEY_DEMO_ICON)
             .addPicture(demoPicture)
 
@@ -219,7 +333,7 @@ object DemoNotificationManager {
         val hyperIslandBuilder = HyperIslandNotification
             .Builder(context, "demoApp", title)
             .setChatInfo(title = "Downloading...", content = "75% complete", pictureKey = PIC_KEY_PROGRESS)
-            .setBigIslandProgressCircle(PIC_KEY_PROGRESS, "", progress, progressColor, isCCW = true)
+            .setBigIslandProgressCircle(PIC_KEY_PROGRESS, "Downloading", progress, progressColor, isCCW = true)
             .setSmallIslandCircularProgress(PIC_KEY_PROGRESS, progress, progressColor, isCCW = true)
             .addPicture(progressPicture)
 
@@ -269,7 +383,6 @@ object DemoNotificationManager {
         context.getSystemService(NotificationManager::class.java).notify(getUniqueNotificationId(), notification)
     }
 
-
     fun showSimpleSmallIslandNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
         showSupportToast(context)
@@ -279,7 +392,7 @@ object DemoNotificationManager {
         val text = "Icon on left (small), icon+text (big)."
 
         val openAppIntentContent = createAppOpenIntent(context, 0)
-        val openAppIntentAction = createAppOpenIntent(context, 1) // Activity
+        val openAppIntentAction = createAppOpenIntent(context, 1)
 
         val simplePicture = HyperPicture(PIC_KEY_SIMPLE, context, R.drawable.rounded_arrow_outward_24)
 
@@ -287,9 +400,9 @@ object DemoNotificationManager {
             key = ACTION_KEY_APP_OPEN,
             title = "Open App",
             context = context,
-            drawableRes = R.drawable.rounded_arrow_outward_24, // Not changing
+            drawableRes = R.drawable.rounded_arrow_outward_24,
             pendingIntent = openAppIntentAction,
-            actionIntentType = 1, // 1 for Activity
+            actionIntentType = 1,
             isProgressButton = false
         )
 
@@ -304,12 +417,12 @@ object DemoNotificationManager {
                 title = "Simple Info",
                 content = "This is the expanded view",
                 pictureKey = PIC_KEY_SIMPLE,
-                actionKeys = listOf(ACTION_KEY_APP_OPEN) // <-- Add key to chatInfo
+                actionKeys = listOf(ACTION_KEY_APP_OPEN)
             )
             .setBigIslandInfo(bigIslandInfo)
             .setSmallIslandIcon(PIC_KEY_SIMPLE)
             .addPicture(simplePicture)
-            .addAction(appOpenAction) // Add action to builder
+            .addAction(appOpenAction)
 
         val resourceBundle = hyperIslandBuilder.buildResourceBundle()
         val jsonParam = hyperIslandBuilder.buildJsonParam()
@@ -364,7 +477,6 @@ object DemoNotificationManager {
         context.getSystemService(NotificationManager::class.java).notify(getUniqueNotificationId(), notification)
     }
 
-
     fun showMultiActionNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
         showSupportToast(context)
@@ -373,7 +485,6 @@ object DemoNotificationManager {
         val title = "Multi-Action Demo"
         val text = "This demonstrates multiple buttons."
 
-        // 1. Create Intents (Correct)
         val stopPendingIntent = createBroadcastIntent(
             context = context,
             notificationId = notificationId,
@@ -389,34 +500,29 @@ object DemoNotificationManager {
             requestCode = notificationId + 2
         )
 
-        // 2. Create HyperActions (Correct)
         val stopAction = HyperAction(
             key = ACTION_KEY_STOP_PROGRESS,
             title = null,
             context = context,
             drawableRes = R.drawable.rounded_pause_24,
             pendingIntent = stopPendingIntent,
-            actionIntentType = 2, // 2 for Broadcast
+            actionIntentType = 2,
             isProgressButton = true,
-            progress = 10,
-            progressColor = "#FF3B30",
+            progress = 40,
+            progressColor = "#FFC700"
         )
         val closeAction = HyperAction(
             key = ACTION_KEY_CLOSE_NOTIFICATION,
-            title = null,
-            context = context,
-            drawableRes = R.drawable.rounded_close_24,
+            title = "Close",
             pendingIntent = closePendingIntent,
-            actionIntentType = 2, // 2 for Broadcast
+            actionIntentType = 2,
             actionBgColor = "#FF3B30"
         )
 
-        // 3. Create HyperPictures (Correct)
         val appPicture = HyperPicture(PIC_KEY_APP_OPEN, context, R.drawable.round_smart_button_24)
         val stopPicture = HyperPicture(PIC_KEY_STOP_ICON, context, R.drawable.ic_launcher_foreground)
         val closePicture = HyperPicture(PIC_KEY_CLOSE_ICON, context, R.drawable.ic_launcher_foreground)
 
-        // 4. Build Extras
         val hyperIslandBuilder = HyperIslandNotification
             .Builder(context, "demoApp", title)
             .setChatInfo(
