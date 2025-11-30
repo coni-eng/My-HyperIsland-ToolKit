@@ -1,5 +1,5 @@
 # HyperIsland Kit 🏝️
-<img alt="Version 0.3.0" src="https://img.shields.io/badge/version-0.3.0-blue"/>
+<img alt="Version 0.3.3" src="https://img.shields.io/badge/version-0.3.3-blue"/>
 
 A simple, fluent Kotlin builder for creating notifications on Xiaomi's HyperIsland.
 
