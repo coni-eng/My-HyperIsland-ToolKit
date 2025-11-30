@@ -19,7 +19,7 @@ data class ParamV2(
     val timeout: Long? = null,
     @SerialName("enableFloat")
     val enableFloat: Boolean = true,
-    @SerialName("isShownNotification")
+    @SerialName("isShowNotification")
     val isShowNotification: Boolean = true,
     @SerialName("islandFirstFloat")
     val islandFirstFloat: Boolean = true,

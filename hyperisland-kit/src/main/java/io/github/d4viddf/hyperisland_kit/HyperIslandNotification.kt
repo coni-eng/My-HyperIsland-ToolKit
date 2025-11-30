@@ -179,6 +179,7 @@ class HyperIslandNotification private constructor(
     private var stepInfo: StepInfo? = null
     private var timeout: Long? = null
     private var enableFloat: Boolean = true
+
     private var isShowNotification: Boolean = true
     // --- NEW: Log Configuration ---
     private var logEnabled: Boolean = true
