@@ -20,7 +20,7 @@ data class ParamV2(
     @SerialName("enableFloat")
     val enableFloat: Boolean = true,
     @SerialName("isShownNotification")
-    val isShownNotification: Boolean = true,
+    val isShowNotification: Boolean = true,
     @SerialName("islandFirstFloat")
     val islandFirstFloat: Boolean = true,
     @SerialName("smallWindowInfo")

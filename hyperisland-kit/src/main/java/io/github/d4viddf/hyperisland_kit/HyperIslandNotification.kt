@@ -179,7 +179,7 @@ class HyperIslandNotification private constructor(
     private var stepInfo: StepInfo? = null
     private var timeout: Long? = null
     private var enableFloat: Boolean = true
-    private var isShownNotification: Boolean = true
+    private var isShowNotification: Boolean = true
     // --- NEW: Log Configuration ---
     private var logEnabled: Boolean = true
 
@@ -210,7 +210,7 @@ class HyperIslandNotification private constructor(
 
     fun setTimeout(durationMs: Long) = apply { this.timeout = durationMs }
     fun setEnableFloat(enable: Boolean) = apply { this.enableFloat = enable }
-    fun setShowNotification(show: Boolean) = apply { this.isShownNotification = show }
+    fun setShowNotification(show: Boolean) = apply { this.isShowNotification = show }
     fun setSmallWindowTarget(fullyQualifiedActivityName: String) = apply { this.targetPage = fullyQualifiedActivityName }
 
     fun setHintInfo(title: String, actionKey: String? = null) = apply {
@@ -499,7 +499,7 @@ class HyperIslandNotification private constructor(
             stepInfo = this.stepInfo,
             timeout = this.timeout,
             enableFloat = this.enableFloat,
-            isShownNotification = this.isShownNotification,
+            isShowNotification = this.isShowNotification,
             islandFirstFloat = this.enableFloat
         )
         val payload = HyperIslandPayload(paramV2)
