@@ -55,7 +55,30 @@ fun DemoListScreen(
             )
         }
 
-        // --- 1. Simple Demos ---
+        // --- 1. Raw JSON Tests (New Features) ---
+        item {
+            Text(
+                text = "Raw JSON Tests (New Features)",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+        item { DemoCard("Raw BaseInfo (Full)", "Tests colors, subtitles, and dividers.", onClick = { DemoNotificationManager.showRawBaseInfoFull(context) }) }
+        item { DemoCard("Raw HighlightInfo", "Tests the 'Emphasis' text template.", onClick = { DemoNotificationManager.showRawHighlightInfo(context) }) }
+        item { DemoCard("Raw HighlightInfoV3", "Tests the 'Price/Promo' template.", onClick = { DemoNotificationManager.showRawHighlightInfoV3(context) }) }
+        item { DemoCard("Raw Colored Actions (Highlight)", "Tests colored icon buttons in HighlightInfo.", onClick = { DemoNotificationManager.showRawColoredActions(context) }) }
+        item { DemoCard("Raw Colored Text Buttons", "Tests colored text-only buttons.", onClick = { DemoNotificationManager.showRawColoredTextButtons(context) }) }
+        item { DemoCard("Raw Call Notification", "Simulate Call (Red/Green buttons)", onClick = { DemoNotificationManager.showRawCallNotification(context) }) }
+        item { DemoCard("Raw Icon Buttons", "Icon-only buttons (Prev/Next).", onClick = { DemoNotificationManager.showRawIconButtons(context) }) }
+        item { DemoCard("Raw Progress + Color Btn", "Mix of circular progress and colored text button.", onClick = { DemoNotificationManager.showRawProgressAndColorButton(context) }) }
+        // --- 2. Existing Demos ---
+        item {
+            Text(
+                text = "Existing Demos",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
         item { DemoCard("App Open Demo", "Basic notification. Drag island to open.") { DemoNotificationManager.showAppOpenNotification(context) } }
         item { DemoCard("Chat Info (Text Action)", "Chat style with text-only action.", onClick = { DemoNotificationManager.showChatNotification(context) }) }
         item { DemoCard("Chat Info (Icon Action)", "Simple panel with icon button.", onClick = { DemoNotificationManager.showSimpleSmallIslandNotification(context) }) }

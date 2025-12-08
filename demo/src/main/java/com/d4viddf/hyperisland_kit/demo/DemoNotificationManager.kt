@@ -26,6 +26,8 @@ private const val ACTION_KEY_APP_OPEN = "action.app.open"
 private const val ACTION_KEY_STOP_PROGRESS = "action.stop"
 private const val ACTION_KEY_CLOSE_NOTIFICATION = "action.close"
 private const val ACTION_KEY_HINT = "action.hint"
+private const val ACTION_KEY_TEST_1 = "action.test.1"
+private const val ACTION_KEY_TEST_2 = "action.test.2"
 
 private const val PIC_KEY_MEDICATION = "pic.medication"
 private const val PIC_KEY_DEMO_ICON = "pic.demo.icon"
@@ -452,6 +454,641 @@ object DemoNotificationManager {
         val resourceBundle = hyperIslandBuilder.buildResourceBundle()
         val jsonParam = hyperIslandBuilder.buildJsonParam()
         val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID).setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(title).setContentText(text).addExtras(resourceBundle).build()
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+// ============================================================================================
+    // RAW JSON TESTS
+    // ============================================================================================
+
+    // 1. Raw BaseInfo (Unchanged)
+    fun showRawBaseInfoFull(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Raw Base")
+            .addPicture(pic)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_base_test",
+            "updatable": true,
+            "ticker": "Raw Base",
+            "isShownNotification": true,
+            "baseInfo": {
+              "type": 2,
+              "title": "Major Alert",
+              "subTitle": "Subtitle",
+              "extraTitle": "Extra",
+              "specialTitle": "Special",
+              "content": "Content Line 1",
+              "subContent": "Content Line 2",
+              "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON",
+              "colorTitle": "#FF3B30",
+              "colorSubTitle": "#007AFF",
+              "colorExtraTitle": "#34C759",
+              "colorSpecialTitle": "#FFFFFF",
+              "colorSpecialBg": "#FF3B30",
+              "showDivider": true,
+              "showContentDivider": true
+            },
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw BaseInfo")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 2. Raw HighlightInfo (FIXED: Removed baseInfo)
+    fun showRawHighlightInfo(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Highlight")
+            .addPicture(pic)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        // Removed baseInfo as requested
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_highlight",
+            "updatable": true,
+            "ticker": "Highlight",
+            "isShownNotification": true,
+            "highlightInfo": {
+               "title": "45 Mins",
+               "content": "Recording...",
+               "subContent": "Meeting",
+               "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON",
+               "colorTitle": "#FF8514",
+               "colorContent": "#999999"
+            },
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw HighlightInfo")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 3. Raw HighlightInfoV3 (Unchanged - Keeps baseInfo)
+    fun showRawHighlightInfoV3(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val testAction = HyperAction(
+            key = ACTION_KEY_TEST_1,
+            title = "Buy Now",
+            pendingIntent = createAppOpenIntent(context, 1),
+            actionIntentType = 1,
+            actionBgColor = "#007AFF"
+        )
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "V3")
+            .addPicture(pic)
+            .addAction(testAction)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_v3",
+            "updatable": true,
+            "ticker": "V3",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 1,
+                "title": "Promo Alert",
+                "content": "Flash sale ending soon!",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "highlightInfoV3": {
+               "primaryText": "$999",
+               "secondaryText": "$1200",
+               "highLightText": "SALE",
+               
+               "primaryColor": "#FF3B30",
+               "secondaryColor": "#999999",
+               "highLightTextColor": "#FFFFFF",
+               "highLightbgColor": "#FF3B30",
+               
+               "actionInfo": {
+                 "action": "miui.focus.action_$ACTION_KEY_TEST_1",
+                 "actionTitle": "Buy Now",
+                 "actionBgColor": "#007AFF",
+                 "actionTitleColor": "#FFFFFF",
+                 "actionIntentType": 1
+               }
+            },
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw HighlightInfoV3")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 4. Raw TextButton (Unchanged)
+    fun showRawTextButton(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val action1 = HyperAction(ACTION_KEY_TEST_1, "Option A", createAppOpenIntent(context, 1), 1)
+        val action2 = HyperAction(ACTION_KEY_TEST_2, "Option B", createAppOpenIntent(context, 2), 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "TextBtn")
+            .addPicture(pic)
+            .addAction(action1)
+            .addAction(action2)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_text_btn",
+            "updatable": true,
+            "ticker": "Text Buttons",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 2,
+                "title": "Choose an Option",
+                "content": "Please select below",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "textButton": [
+                {
+                   "action": "miui.focus.action_$ACTION_KEY_TEST_1",
+                   "actionTitle": "Option A",
+                   "actionBgColor": "#34C759",
+                   "actionIntentType": 1
+                },
+                {
+                   "action": "miui.focus.action_$ACTION_KEY_TEST_2",
+                   "actionTitle": "Option B",
+                   "actionBgColor": "#FF3B30",
+                   "actionIntentType": 1
+                }
+            ],
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw TextButton")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 5. Raw Colored Actions (HintInfo) - FIXED Suffix to 'Dark'
+    fun showRawColoredActions(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+        val iconBtn = HyperPicture("pic_btn_icon", context, R.drawable.rounded_arrow_outward_24)
+
+        // Create Action just to register Intent
+        val actionGreen = HyperAction(ACTION_KEY_TEST_1, "Ignored", createAppOpenIntent(context, 1), 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Colors")
+            .addPicture(pic)
+            .addPicture(iconBtn)
+            .addAction(actionGreen)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        // FIXED: Changed *Dar to *Dark
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_colored_actions",
+            "updatable": true,
+            "ticker": "Colors",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 1,
+                "title": "Colored Action",
+                "content": "Using HintInfo Template",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "hintInfo": {
+               "type": 1,
+               "title": "Action Required",
+               "content": "Tap the green button",
+               
+               "actionInfo": {
+                 "action": "miui.focus.action_$ACTION_KEY_TEST_1",
+                 "actionTitle": "Green Button",
+                 "actionIcon": "miui.focus.pic_pic_btn_icon",
+                 "actionIconDark": "miui.focus.pic_pic_btn_icon",
+                 
+                 "actionBgColor": "#34C759", 
+                 "actionBgColorDark": "#34C759",
+                 
+                 "actionTitleColor": "#FFFFFF",
+                 "actionTitleColorDark": "#FFFFFF",
+                 
+                 "actionIntentType": 1,
+                 "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_1"
+               }
+            },
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw Colored Actions")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 6. Raw Colored Text Buttons (TextButton) - FIXED Suffix to 'Dark'
+    fun showRawColoredTextButtons(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+        val btnIcon = HyperPicture("pic_btn_icon", context, R.drawable.rounded_arrow_outward_24)
+
+        // Actions
+        val action1 = HyperAction(ACTION_KEY_TEST_1, "A", createAppOpenIntent(context, 1), 1)
+        val action2 = HyperAction(ACTION_KEY_TEST_2, "B", createAppOpenIntent(context, 2), 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "TextBtn")
+            .addPicture(pic)
+            .addPicture(btnIcon)
+            .addAction(action1)
+            .addAction(action2)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        // FIXED: Changed *Dar to *Dark
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_text_btn",
+            "updatable": true,
+            "ticker": "Text Buttons",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 2,
+                "title": "Text Button + Icon",
+                "content": "Custom colors & icons",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "textButton": [
+                {
+                   "actionTitle": "Accept",
+                   "actionIcon": "miui.focus.pic_pic_btn_icon",
+                   "actionIconDark": "miui.focus.pic_pic_btn_icon",
+                   
+                   "actionBgColor": "#34C759",
+                   "actionBgColorDark": "#34C759",
+                   
+                   "actionTitleColor": "#FFFFFF",
+                   "actionTitleColorDark": "#FFFFFF",
+                   
+                   "actionIntentType": 1,
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_1",
+                   "type": 0 
+                },
+                {
+                   "actionTitle": "Reject",
+                   "actionIcon": "miui.focus.pic_pic_btn_icon",
+                   "actionIconDark": "miui.focus.pic_pic_btn_icon",
+                   
+                   "actionBgColor": "#FF3B30",
+                   "actionBgColorDark": "#FF3B30",
+                   
+                   "actionTitleColor": "#FFFFFF",
+                   "actionTitleColorDark": "#FFFFFF",
+                   
+                   "actionIntentType": 1,
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_2",
+                   "type": 0
+                }
+            ],
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw TextButton")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 7. NEW: Raw Call Notification (Text Buttons with Icons)
+    // Uses "textButton" list to create Pill-shaped buttons with Icons + Text
+    fun showRawCallNotification(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+
+        // Resources for Call Interface
+        val avatarPic = HyperPicture("pic_avatar", context, R.drawable.ic_launcher_foreground)
+        // Use generic icons or create specific call/hangup icons in drawable
+        val iconDecline = HyperPicture("pic_decline", context, R.drawable.rounded_pause_24)
+        val iconAnswer = HyperPicture("pic_answer", context, R.drawable.round_smart_button_24)
+
+        // Intents
+        val intentDecline = createAppOpenIntent(context, 1)
+        val intentAnswer = createAppOpenIntent(context, 2)
+
+        // Actions (Only to register intents/icons in Bundle)
+        val actionDecline = HyperAction(ACTION_KEY_TEST_1, "Decline", intentDecline, 1)
+        val actionAnswer = HyperAction(ACTION_KEY_TEST_2, "Answer", intentAnswer, 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Call")
+            .addPicture(avatarPic)
+            .addPicture(iconDecline)
+            .addPicture(iconAnswer)
+            .addAction(actionDecline)
+            .addAction(actionAnswer)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        // Switch to "textButton" array for colored pills
+        // Included *Dark colors for system compatibility
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_call",
+            "updatable": true,
+            "ticker": "Incoming Call",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 2,
+                "title": "Incoming Call",
+                "content": "John Doe",
+                "picFunction": "miui.focus.pic_pic_avatar"
+            },
+            "textButton": [
+                {
+                   "actionTitle": "Decline",
+                   "actionIcon": "miui.focus.pic_pic_decline",
+                   "actionIconDark": "miui.focus.pic_pic_decline",
+                   
+                   "actionBgColor": "#FF3B30", 
+                   "actionBgColorDark": "#FF3B30",
+                   
+                   "actionTitleColor": "#FFFFFF",
+                   "actionTitleColorDark": "#FFFFFF",
+                   
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_1",
+                   "actionIntentType": 1,
+                   "type": 0
+                },
+                {
+                   "actionTitle": "Answer",
+                   "actionIcon": "miui.focus.pic_pic_answer",
+                   "actionIconDark": "miui.focus.pic_pic_answer",
+                   
+                   "actionBgColor": "#34C759", 
+                   "actionBgColorDark": "#34C759",
+                   
+                   "actionTitleColor": "#FFFFFF",
+                   "actionTitleColorDark": "#FFFFFF",
+                   
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_2",
+                   "actionIntentType": 1,
+                   "type": 0
+                }
+            ],
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_pic_avatar" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Incoming Call")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 8. NEW: Raw Icon Buttons (Icon Only)
+    // Uses "actions" array with explicit icons defined in JSON.
+    fun showRawIconButtons(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.ic_launcher_foreground)
+
+        // Icons for the buttons
+        val iconPrev = HyperPicture("pic_prev", context, R.drawable.rounded_timer_arrow_down_24) // Use as Prev
+        val iconNext = HyperPicture("pic_next", context, R.drawable.rounded_timer_arrow_up_24)   // Use as Next
+
+        // Intents
+        val intentPrev = createAppOpenIntent(context, 1)
+        val intentNext = createAppOpenIntent(context, 2)
+
+        // Actions (Register intents)
+        val actionPrev = HyperAction(ACTION_KEY_TEST_1, "Prev", intentPrev, 1)
+        val actionNext = HyperAction(ACTION_KEY_TEST_2, "Next", intentNext, 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Icons")
+            .addPicture(pic)
+            .addPicture(iconPrev)
+            .addPicture(iconNext)
+            .addAction(actionPrev)
+            .addAction(actionNext)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_icon_btns",
+            "updatable": true,
+            "ticker": "Icon Buttons",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 2,
+                "title": "Music Control",
+                "content": "Icon Only Buttons",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "actions": [
+                {
+                   "actionIcon": "miui.focus.pic_pic_prev",
+                   "actionIconDark": "miui.focus.pic_pic_prev",
+                   
+                   "actionBgColor": "#E0E0E0", 
+                   "actionBgColorDark": "#333333",
+                   
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_1",
+                   "actionIntentType": 1
+                },
+                {
+                   "actionIcon": "miui.focus.pic_pic_next",
+                   "actionIconDark": "miui.focus.pic_pic_next",
+                   
+                   "actionBgColor": "#E0E0E0", 
+                   "actionBgColorDark": "#333333",
+                   
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_2",
+                   "actionIntentType": 1
+                }
+            ],
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw Icon Buttons")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
+    }
+
+    // 9. NEW: Raw Progress + Color Button
+    // Mixed array: One progress button, one colored text button.
+    fun showRawProgressAndColorButton(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        val notificationId = getUniqueNotificationId()
+        val openAppIntent = createAppOpenIntent(context, 0)
+        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.rounded_timer_arrow_down_24)
+
+        // Icon for the Stop button (if needed, though text buttons can be text-only)
+        val iconStop = HyperPicture("pic_stop", context, R.drawable.rounded_pause_24)
+
+        // Intents
+        val intentProgress = createAppOpenIntent(context, 1) // Clicking the progress circle
+        val intentStop = createAppOpenIntent(context, 2)     // Clicking Stop
+
+        // Register Actions
+        val actionProgress = HyperAction(ACTION_KEY_TEST_1, "Progress", intentProgress, 1)
+        val actionStop = HyperAction(ACTION_KEY_TEST_2, "Stop", intentStop, 1)
+
+        val builder = HyperIslandNotification.Builder(context, "demo", "Mix")
+            .addPicture(pic)
+            .addPicture(iconStop)
+            .addAction(actionProgress)
+            .addAction(actionStop)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+
+        // Action 1: Progress Button (No title, has progressInfo)
+        // Action 2: Text/Icon Button (Title, Color)
+        val jsonParam = """
+        {
+          "param_v2": {
+            "business": "raw_mix_btns",
+            "updatable": true,
+            "ticker": "Mixed Buttons",
+            "isShownNotification": true,
+            "baseInfo": {
+                "type": 2,
+                "title": "Downloading...",
+                "content": "Progress + Action",
+                "picFunction": "miui.focus.pic_$PIC_KEY_DEMO_ICON"
+            },
+            "actions": [
+                {
+                    "type":1,
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_1",
+                   "actionIntentType": 1,
+                   "actionIcon": "miui.focus.pic_pic_stop",
+                   "actionIconDark": "miui.focus.pic_pic_stop",
+                   "actionBgColor": "#ffffff", 
+                   "actionBgColorDark": "#ffffff",
+                   "progressInfo": {
+                        "progress": 65,
+                        "isCCW": true
+                   }
+                },
+                {
+                   "type":0,
+                   "actionTitle": "Stop",
+                   "actionIcon": "miui.focus.pic_pic_stop",
+                   "actionIconDark": "miui.focus.pic_pic_stop",
+                   "actionBgColor": "#FF6700", 
+                   "actionBgColorDark": "#FF6700",
+                   "actionIntent": "miui.focus.action_$ACTION_KEY_TEST_2",
+                   "actionIntentType": 1
+                }
+            ],
+            "param_island": { "islandProperty": 1, "smallIslandArea": { "picInfo": { "type": 1, "pic": "miui.focus.pic_$PIC_KEY_DEMO_ICON" } } }
+          }
+        }
+        """.trimIndent()
+
+        val resourceBundle = builder.buildResourceBundle()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Raw Progress + Color Button")
+            .setContentIntent(openAppIntent)
+            .addExtras(resourceBundle)
+            .build()
+
         notification.extras.putString("miui.focus.param", jsonParam)
         context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
     }

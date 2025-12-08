@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
 // Sealed class to define our navigation destinations
@@ -26,5 +27,11 @@ sealed class Navigation(
         route = "demos",
         title = "Demos",
         icon = Icons.AutoMirrored.Filled.List
+    )
+    // New Bottom Nav Item
+    object NotificationLog : Navigation(
+        route = "notification_log",
+        title = "Inspector",
+        icon = Icons.Default.Search
     )
 }

@@ -51,7 +51,13 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background) {
 
                     val navController = rememberNavController()
-                    val bottomBarScreens = listOf(Navigation.Compatibility, Navigation.Demos)
+
+                    // --- UPDATED: Added NotificationLog to the list ---
+                    val bottomBarScreens = listOf(
+                        Navigation.Compatibility,
+                        Navigation.Demos,
+                        Navigation.NotificationLog
+                    )
 
                     Scaffold(
                         containerColor = MaterialTheme.colorScheme.background,
@@ -91,15 +97,14 @@ class MainActivity : ComponentActivity() {
                                 WelcomeScreen(navController)
                             }
                             composable(Navigation.Compatibility.route) {
-                                // --- PASS NAVCONTROLLER ---
                                 CompatibilityScreen(navController)
                             }
                             composable(Navigation.Demos.route) {
-                                // --- PASS NAVCONTROLLER ---
-                                DemoListScreen(
-
-                                    navController = navController
-                                )
+                                DemoListScreen(navController = navController)
+                            }
+                            // --- NEW ROUTE ---
+                            composable(Navigation.NotificationLog.route) {
+                                NotificationLogScreen()
                             }
                         }
                     }
