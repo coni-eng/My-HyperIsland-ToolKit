@@ -3,12 +3,16 @@ package com.d4viddf.hyperisland_kit.demo
 import android.app.Notification
 import android.app.PendingIntent
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import java.io.File
+import java.io.FileOutputStream
+import androidx.core.graphics.createBitmap
 
 class HyperIslandListenerService : NotificationListenerService() {
 
@@ -18,49 +22,30 @@ class HyperIslandListenerService : NotificationListenerService() {
 
         val extras = sbn.notification.extras
 
-        // --- STRICT FILTER ---
-        // Only process notifications that actually have the HyperIsland JSON data.
-        val jsonParam = extras.getString("miui.focus.param")
-
-        if (jsonParam == null) {
-            return // Ignore standard notifications
-        }
+        // Filter: Only HyperIsland notifications
+        val jsonParam = extras.getString("miui.focus.param") ?: return
 
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: "No Title"
         val packageName = sbn.packageName
 
-        // --- DEEP INSPECTION ---
         val detailsMap = mutableMapOf<String, String>()
+        val assetsMap = mutableMapOf<String, String>() // Store paths to saved images
 
         // 1. Basic Info
-        detailsMap["[BASIC]"] = "--- NOTIFICATION INFO ---"
+        detailsMap["[BASIC]"] = "--- NOTIFICATION SOURCE ---"
+        detailsMap["Package"] = packageName
         detailsMap["ID"] = sbn.id.toString()
-        detailsMap["Key"] = sbn.key
-        detailsMap["Tag"] = sbn.tag ?: "null"
-        detailsMap["Ongoing"] = sbn.isOngoing.toString()
-        detailsMap["Clearable"] = sbn.isClearable.toString()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                detailsMap["OpPkg"] = sbn.opPkg
-                detailsMap["Uid"] = sbn.uid.toString()
-            } catch (e: Exception) { /* Ignore */ }
-        }
 
-        // 2. Flags
-        val flags = sbn.notification.flags
-        detailsMap["Flags (Int)"] = flags.toString()
-        val flagNames = getFlagNames(flags)
-        if (flagNames.isNotEmpty()) detailsMap["Flags (Decoded)"] = flagNames
-
-        // 3. Recursive Extra Dump
-        detailsMap["[EXTRAS]"] = "--- RECURSIVE DUMP ---"
+        // 2. Deep Dump & Asset Extraction
+        detailsMap["[EXTRAS]"] = "--- BUNDLE HIERARCHY ---"
         try {
-            deepDump(extras, "", detailsMap)
+            // Pass assetsMap to collect images
+            deepDump(extras, "extras", detailsMap, assetsMap)
         } catch (e: Exception) {
-            detailsMap["Error"] = "Failed to dump extras: ${e.message}"
+            detailsMap["Error"] = "Failed to dump: ${e.message}"
         }
 
-        Log.d("HyperInspector", "Captured Island Notification: $title ($packageName)")
+        Log.d("HyperInspector", "Captured: $title with ${assetsMap.size} assets")
 
         NotificationLogRepository.addLog(
             NotificationLog(
@@ -69,74 +54,143 @@ class HyperIslandListenerService : NotificationListenerService() {
                 packageName = packageName,
                 title = title,
                 jsonParam = jsonParam,
-                extrasDetails = detailsMap
+                extrasDetails = detailsMap,
+                assets = assetsMap // Save the map of file paths
             )
         )
     }
 
-    /**
-     * Recursively digs into Bundles, Arrays, and Lists to find hidden values.
-     */
-    private fun deepDump(obj: Any?, prefix: String, map: MutableMap<String, String>) {
+    private fun deepDump(
+        obj: Any?,
+        path: String,
+        map: MutableMap<String, String>,
+        assets: MutableMap<String, String>
+    ) {
         if (obj == null) {
-            map[prefix] = "null"
+            map[path] = "null"
             return
         }
 
         when (obj) {
             is Bundle -> {
                 if (obj.isEmpty) {
-                    map[prefix] = "Bundle{}"
+                    map[path] = "Bundle{empty}"
                 } else {
                     obj.keySet().forEach { key ->
-                        if (key != "miui.focus.param") { // Skip the huge JSON
-                            deepDump(obj.get(key), "$prefix.$key", map)
+                        if (key != "miui.focus.param") {
+                            deepDump(obj.get(key), "$path -> $key", map, assets)
                         }
                     }
                 }
             }
             is Array<*> -> {
-                map[prefix] = "Array[${obj.size}]"
+                map[path] = "Array[${obj.size}]"
                 obj.forEachIndexed { index, item ->
-                    deepDump(item, "$prefix[$index]", map)
+                    deepDump(item, "$path[$index]", map, assets)
                 }
             }
             is List<*> -> {
-                map[prefix] = "List[${obj.size}]"
+                map[path] = "List[${obj.size}]"
                 obj.forEachIndexed { index, item ->
-                    deepDump(item, "$prefix[$index]", map)
+                    deepDump(item, "$path[$index]", map, assets)
                 }
             }
 
-            // --- Specific Type Handling ---
-            is Icon -> map[prefix] = "Icon(type=${obj.type}, pkg=${obj.resPackage}, id=${obj.resId})"
-            is Bitmap -> map[prefix] = "Bitmap(${obj.width}x${obj.height})"
-            is PendingIntent -> map[prefix] = "PendingIntent(creator=${obj.creatorPackage})"
-            is Notification.Action -> {
-                map["$prefix.title"] = obj.title.toString()
-                deepDump(obj.extras, "$prefix.extras", map)
+            // --- ASSET EXTRACTION ---
+
+            is Icon -> {
+                val iconInfo = StringBuilder()
+                val typeStr = getIconTypeName(obj.type)
+                iconInfo.append("Icon ($typeStr)")
+
+                if (obj.type == Icon.TYPE_RESOURCE) {
+                    iconInfo.append(" | ${obj.resPackage}:${obj.resId}")
+                }
+
+                // Try to save it
+                val savedPath = saveIconToStorage(obj, path)
+                if (savedPath != null) {
+                    assets[path] = savedPath
+                    iconInfo.append(" [SAVED]")
+                } else {
+                    iconInfo.append(" [SAVE FAILED]")
+                }
+
+                map[path] = iconInfo.toString()
             }
-            is CharSequence -> map[prefix] = obj.toString()
-            is Number, is Boolean -> map[prefix] = obj.toString()
 
-            // Primitive Arrays
-            is IntArray -> map[prefix] = "IntArray${obj.contentToString()}"
-            is LongArray -> map[prefix] = "LongArray${obj.contentToString()}"
-            is ByteArray -> map[prefix] = "ByteArray[${obj.size}]"
+            is Bitmap -> {
+                val savedPath = saveBitmapToStorage(obj, path)
+                if (savedPath != null) {
+                    assets[path] = savedPath
+                    map[path] = "Bitmap (${obj.width}x${obj.height}) [SAVED]"
+                } else {
+                    map[path] = "Bitmap (${obj.width}x${obj.height}) [SAVE FAILED]"
+                }
+            }
 
-            else -> map[prefix] = "${obj.javaClass.simpleName}: $obj"
+            is PendingIntent -> map[path] = "PendingIntent (Creator: ${obj.creatorPackage})"
+            is Notification.Action -> {
+                map["$path.title"] = obj.title.toString()
+                deepDump(obj.extras, "$path.extras", map, assets)
+            }
+            is CharSequence -> map[path] = "\"$obj\""
+            is Number, is Boolean -> map[path] = obj.toString()
+            else -> map[path] = "${obj.javaClass.simpleName}: $obj"
         }
     }
 
-    private fun getFlagNames(flags: Int): String {
-        val active = mutableListOf<String>()
-        if (flags and Notification.FLAG_SHOW_LIGHTS != 0) active.add("SHOW_LIGHTS")
-        if (flags and Notification.FLAG_ONGOING_EVENT != 0) active.add("ONGOING_EVENT")
-        if (flags and Notification.FLAG_INSISTENT != 0) active.add("INSISTENT")
-        if (flags and Notification.FLAG_ONLY_ALERT_ONCE != 0) active.add("ONLY_ALERT_ONCE")
-        if (flags and Notification.FLAG_AUTO_CANCEL != 0) active.add("AUTO_CANCEL")
-        if (flags and Notification.FLAG_NO_CLEAR != 0) active.add("NO_CLEAR")
-        if (flags and Notification.FLAG_FOREGROUND_SERVICE != 0) active.add("FOREGROUND_SERVICE")
-        return active.joinToString(", ")
+    private fun saveIconToStorage(icon: Icon, keyName: String): String? {
+        return try {
+            // Load the drawable (Context is this service)
+            val drawable = icon.loadDrawable(this) ?: return null
+
+            val bitmap = if (drawable is BitmapDrawable) {
+                drawable.bitmap
+            } else {
+                // Handle VectorDrawables, etc.
+                if (drawable.intrinsicWidth <= 0 || drawable.intrinsicHeight <= 0) return null
+                val bmp = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
+                val canvas = Canvas(bmp)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bmp
+            }
+
+            saveBitmapToStorage(bitmap, keyName)
+        } catch (e: Exception) {
+            Log.e("HyperInspector", "Failed to save icon $keyName: ${e.message}")
+            null
+        }
     }
+
+    private fun saveBitmapToStorage(bitmap: Bitmap, keyName: String): String? {
+        return try {
+            // Clean up the key name to be a valid filename
+            val safeName = keyName.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            val fileName = "asset_${System.currentTimeMillis()}_$safeName.png"
+            val file = File(cacheDir, fileName) // Save to cache dir
+
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            Log.e("HyperInspector", "Failed to save bitmap $keyName: ${e.message}")
+            null
+        }
+    }
+
+    private fun getIconTypeName(type: Int): String {
+        return when (type) {
+            Icon.TYPE_BITMAP -> "BITMAP"
+            Icon.TYPE_RESOURCE -> "RESOURCE"
+            Icon.TYPE_DATA -> "DATA"
+            Icon.TYPE_URI -> "URI"
+            Icon.TYPE_ADAPTIVE_BITMAP -> "ADAPTIVE"
+            Icon.TYPE_URI_ADAPTIVE_BITMAP -> "URI_ADAPTIVE"
+            else -> "TYPE_$type"
+        }
+    }
+
 }

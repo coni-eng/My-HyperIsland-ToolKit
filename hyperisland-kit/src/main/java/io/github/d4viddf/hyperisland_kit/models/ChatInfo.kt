@@ -8,7 +8,7 @@ data class ChatInfo(
     val type: Int = 1,
     val title: String,
     val content: String? = null,
-    @SerialName("picFunction")
+    @SerialName("picProfile")
     val picFunction: String? = null,
     val actions: List<HyperActionRef>? = null,
     val timerInfo: TimerInfo? = null

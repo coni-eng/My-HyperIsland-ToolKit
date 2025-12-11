@@ -9,7 +9,9 @@ data class NotificationLog(
     val title: String,
     val jsonParam: String?,
     // Stores decoded details about pictures and actions
-    val extrasDetails: Map<String, String>
+    val extrasDetails: Map<String, String>,
+    val assets: Map<String, String> = emptyMap()
+
 )
 
 object NotificationLogRepository {
