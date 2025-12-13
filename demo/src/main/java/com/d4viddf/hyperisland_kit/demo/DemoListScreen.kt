@@ -41,38 +41,55 @@ fun DemoListScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
-        // --- 0. Configurable Options ---
         item { ConfigurableDemoCard { t, f, s -> DemoNotificationManager.showConfigurableNotification(context, t, f, s) } }
 
-        // --- 1. Raw JSON Tests (New Features) ---
-        item { Text("Raw JSON Tests (New Features)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
-        item { DemoCard("Raw BaseInfo (Full)", "Tests colors, subtitles, and dividers.", onClick = { DemoNotificationManager.showRawBaseInfoFull(context) }) }
-        item { DemoCard("Raw HighlightInfo", "Tests the 'Emphasis' text template.", onClick = { DemoNotificationManager.showRawHighlightInfo(context) }) }
-        item { DemoCard("Raw HighlightInfoV3", "Tests the 'Price/Promo' template.", onClick = { DemoNotificationManager.showRawHighlightInfoV3(context) }) }
-        item { DemoCard("Raw Colored Actions (HintInfo)", "Tests colored icon buttons in HintInfo.", onClick = { DemoNotificationManager.showRawColoredActions(context) }) }
-        item { DemoCard("Raw Colored Text Buttons", "Tests colored text-only buttons.", onClick = { DemoNotificationManager.showRawColoredTextButtons(context) }) }
-        item { DemoCard("Raw Call Notification", "Simulate Call (Red/Green buttons).", onClick = { DemoNotificationManager.showRawCallNotification(context) }) }
-        item { DemoCard("Raw Icon Buttons", "Icon-only buttons (Prev/Next).", onClick = { DemoNotificationManager.showRawIconButtons(context) }) }
-        item { DemoCard("Raw Icon+Bg Actions", "Round icon buttons with custom background colors.", onClick = { DemoNotificationManager.showRawActionIconsWithBg(context) }) }
-        item { DemoCard("Raw Progress + Color Btn", "Mix of circular progress and colored text button.", onClick = { DemoNotificationManager.showRawProgressAndColorButton(context) }) }
-        item { DemoCard("Raw BgInfo (Background)", "Tests custom background color/image.", onClick = { DemoNotificationManager.showRawBgInfo(context) }) }
-        item { DemoCard("Raw AnimTextInfo", "Template 15 (Large Icon/Anim + Text).", onClick = { DemoNotificationManager.showRawAnimTextInfo(context) }) }
+        // --- SECTION 1: OFFICIAL TEMPLATES (1-22) ---
+        item { Text("Official Templates (1-22)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
 
-        // --- 2. Existing Demos ---
-        item { Text("Existing Demos", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
+        item { DemoCard("1. Weather", "BaseInfo Type 1 (Red Alert)", onClick = { DemoNotificationManager.showTemplate1_Weather(context) }) }
+        item { DemoCard("2. Taxi Call", "BaseInfo Type 2 (Calling)", onClick = { DemoNotificationManager.showTemplate2_Taxi(context) }) }
+        item { DemoCard("3. IM / Chat", "ChatInfo (Messaging)", onClick = { DemoNotificationManager.showTemplate3_Chat(context) }) }
+        item { DemoCard("4. Taxi Queue", "BaseInfo 2 + MultiProgress", onClick = { DemoNotificationManager.showTemplate4_TaxiQueue(context) }) }
+        item { DemoCard("5. Dining Queue", "BaseInfo 1 + ProgressBar", onClick = { DemoNotificationManager.showTemplate5_DiningQueue(context) }) }
+        item { DemoCard("6. Parking", "BaseInfo 2 + ProgressBar", onClick = { DemoNotificationManager.showTemplate6_Parking(context) }) }
+        item { DemoCard("7. Uploading", "ChatInfo + Circular Progress", onClick = { DemoNotificationManager.showTemplate7_Upload(context) }) }
+        item { DemoCard("8. Coupon", "ChatInfo + HintAction (Top Button)", onClick = { DemoNotificationManager.showTemplate8_Coupon(context) }) }
+        item { DemoCard("9. Movie Ticket", "BaseInfo 2 + HintTimer (Top Timer)", onClick = { DemoNotificationManager.showTemplate9_Movie(context) }) }
+        item { DemoCard("10. Pickup", "BaseInfo 2 + HintAction", onClick = { DemoNotificationManager.showTemplate10_Pickup(context) }) }
+        item { DemoCard("11. Sports/Run", "HighlightInfo + HintTimer", onClick = { DemoNotificationManager.showTemplate11_Sports(context) }) }
+        item { DemoCard("12. Call", "ChatInfo + Standard Actions", onClick = { DemoNotificationManager.showTemplate12_Call(context) }) }
+        item { DemoCard("13. Recording", "HighlightInfo + Stop Action", onClick = { DemoNotificationManager.showTemplate13_Recording(context) }) }
+        item { DemoCard("14. Navigation", "IconTextInfo (Turn Right)", onClick = { DemoNotificationManager.showTemplate14_Navigation(context) }) }
+        item { DemoCard("15. Recorder", "AnimTextInfo (Voice Wave)", onClick = { DemoNotificationManager.showTemplate15_Recorder(context) }) }
+        item { DemoCard("16. Code", "IconTextInfo + Copy Button", onClick = { DemoNotificationManager.showTemplate16_Code(context) }) }
+        item { DemoCard("17. Promo", "HighlightInfoV3 (Pricing)", onClick = { DemoNotificationManager.showTemplate17_Promo(context) }) }
+        item { DemoCard("18. File Request", "IconTextInfo + Text Buttons", onClick = { DemoNotificationManager.showTemplate18_FileRequest(context) }) }
+        item { DemoCard("19. Cover Media", "CoverInfo + HintAction", onClick = { DemoNotificationManager.showTemplate19_Cover(context) }) }
+        item { DemoCard("20. Data Usage", "IconTextInfo + Linear Progress", onClick = { DemoNotificationManager.showTemplate20_Data(context) }) }
+        item { DemoCard("21. Game Download", "ChatInfo + Linear Progress", onClick = { DemoNotificationManager.showTemplate21_Game(context) }) }
+        item { DemoCard("22. IoT Status", "IconTextInfo + Progress", onClick = { DemoNotificationManager.showTemplate22_IoT(context) }) }
+
+        // --- SECTION 2: ADVANCED CUSTOMIZATION ---
+        item { Text("Advanced Customization", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
+        item { DemoCard("Colored Text Buttons", "Text-only actions with custom BG colors.", onClick = { DemoNotificationManager.showRawColoredTextButtons(context) }) }
+        item { DemoCard("Icon Buttons (Rounded)", "Icon-only actions with generated circle BG.", onClick = { DemoNotificationManager.showRawIconButtons(context) }) }
+        item { DemoCard("Mix: Progress + Color", "Circular progress button next to a standard colored button.", onClick = { DemoNotificationManager.showRawProgressAndColorButton(context) }) }
+        item { DemoCard("Background Color", "Notification with custom colored background.", onClick = { DemoNotificationManager.showRawBgInfo(context) }) }
+
+        // --- SECTION 3: STANDARD DEMOS ---
+        item { Text("Standard Demos", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
         item { DemoCard("App Open Demo", "Basic notification. Drag island to open.", onClick = { DemoNotificationManager.showAppOpenNotification(context) }) }
-        item { DemoCard("Chat Info (Text Action)", "Chat style with text-only action.", onClick = { DemoNotificationManager.showChatNotification(context) }) }
-        item { DemoCard("Chat Info (Icon Action)", "Simple panel with icon button.", onClick = { DemoNotificationManager.showSimpleSmallIslandNotification(context) }) }
-        item { DemoCard("Right Image Demo", "Expanded island with image on right.", onClick = { DemoNotificationManager.showRightImageNotification(context) }) }
-        item { DemoCard("Split Info (Left & Right)", "Content on both left and right sides.", onClick = { DemoNotificationManager.showSplitIslandNotification(context) }) }
-        item { DemoCard("Hint Info (Top)", "Small hint floating above notification.", onClick = { DemoNotificationManager.showHintInfoNotification(context) }) }
-        item { DemoCard("Node Progress (Multi)", "Segmented 'Step 2 of 4' progress bar on notification.", onClick = { DemoNotificationManager.showMultiNodeProgressNotification(context) }) }
-        item { DemoCard("Colored Title (BaseInfo)", "Standard notification with Red title.", onClick = { DemoNotificationManager.showColoredBaseNotification(context) }) }
-        item { DemoCard("Icon Progress Bar", "Linear progress with icons.", onClick = { DemoNotificationManager.showProgressBarNotification(context) }) }
-        item { DemoCard("Circular Progress Demo", "Circular progress on big/small island.", onClick = { DemoNotificationManager.showCircularProgressNotification(context) }) }
-        item { DemoCard("Countdown Notification", "15-minute countdown timer.", onClick = { DemoNotificationManager.showCountdownNotification(context) }) }
+        item { DemoCard("Chat Info", "Chat style with text action.", onClick = { DemoNotificationManager.showChatNotification(context) }) }
+        item { DemoCard("Simple Island", "Small icon left, text right.", onClick = { DemoNotificationManager.showSimpleSmallIslandNotification(context) }) }
+        item { DemoCard("Right Image", "Expanded island with image on right.", onClick = { DemoNotificationManager.showRightImageNotification(context) }) }
+        item { DemoCard("Split Info", "Content on both left and right sides.", onClick = { DemoNotificationManager.showSplitIslandNotification(context) }) }
+        item { DemoCard("Hint Info", "Small hint floating above notification.", onClick = { DemoNotificationManager.showHintInfoNotification(context) }) }
+        item { DemoCard("Multi Node Progress", "Segmented 'Step 2 of 4' progress bar.", onClick = { DemoNotificationManager.showMultiNodeProgressNotification(context) }) }
+        item { DemoCard("Icon Progress Bar", "Linear progress with icons (Delivery).", onClick = { DemoNotificationManager.showProgressBarNotification(context) }) }
+        item { DemoCard("Circular Progress", "Circular progress on big/small island.", onClick = { DemoNotificationManager.showCircularProgressNotification(context) }) }
+        item { DemoCard("Countdown Timer", "15-minute countdown.", onClick = { DemoNotificationManager.showCountdownNotification(context) }) }
         item { DemoCard("Count-Up Timer", "Timer counting up.", onClick = { DemoNotificationManager.showCountUpNotification(context) }) }
-        item { DemoCard("Multi-Action Demo", "Progress button + Text button.", onClick = { DemoNotificationManager.showMultiActionNotification(context) }) }
+        item { DemoCard("Multi-Action", "Stop (Progress) + Close buttons.", onClick = { DemoNotificationManager.showMultiActionNotification(context) }) }
     }
 }
 
