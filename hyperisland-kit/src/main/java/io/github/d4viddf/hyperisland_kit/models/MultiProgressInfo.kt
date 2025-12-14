@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class MultiProgressInfo(
     val title: String,
     val progress: Int,
-    val color: String? = null,
-    val points: Int = 0
+    val points: Int = 0,
+    val color: String? = null
 )

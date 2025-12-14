@@ -14,8 +14,8 @@ android {
         applicationId = "com.d4viddf.hyperisland_kit.demo"
         minSdk = 35
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.0"
+        versionCode = 6
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
