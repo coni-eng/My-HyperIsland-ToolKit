@@ -448,12 +448,38 @@ class HyperIslandNotification private constructor(
 
     fun setBigIslandCountUp(startTime: Long, pictureKey: String, actionKeys: List<String>? = null) = apply {
         ensureParamIsland()
-        val timer = TimerInfo(1, startTime, startTime, System.currentTimeMillis())
+        val timer = TimerInfo(1, startTime, startTime, startTime)
         val left = ImageTextInfoLeft(1, PicInfo(1, PIC_PREFIX + pictureKey), null, null)
         val actions = actionKeys?.map { SimpleActionRef(ACTION_PREFIX + it) }?.ifEmpty { null }
         this.paramIsland = this.paramIsland?.copy(islandProperty = 1, bigIslandArea = BigIslandArea(imageTextInfoLeft = left, sameWidthDigitInfo = SameWidthDigitInfo(timerInfo = timer), actions = actions))
     }
 
+    fun setBigIslandProgressCircle(
+        pictureKey: String,
+        title: String,
+        progress: Int,
+        color: String? = null,
+        isCCW: Boolean = false,
+        actionKeys: List<String>? = null
+    ) = apply {
+        if (this.paramIsland == null) this.paramIsland = ParamIsland()
+
+        val leftInfo = ImageTextInfoLeft(type = 1, picInfo = PicInfo(type = 1, pic = "miui.focus.pic_" + pictureKey), textInfo = TextInfo(title = title, content = null))
+        val progressComponent = ProgressTextInfo(progressInfo = CircularProgressInfo(progress = progress, colorReach = color, isCCW = isCCW), textInfo = null)
+
+        val actionRefs = actionKeys?.map { key ->
+            SimpleActionRef(action = ACTION_PREFIX + key)
+        }?.ifEmpty { null }
+
+        this.paramIsland = this.paramIsland?.copy(
+            islandProperty = 1,
+            bigIslandArea = BigIslandArea(
+                imageTextInfoLeft = leftInfo,
+                progressTextInfo = progressComponent,
+                actions = actionRefs
+            )
+        )
+    }
     fun setBigIslandAnim(animSrc: String, isLoop: Boolean = true, effectColor: String? = null) = apply {
         ensureParamIsland()
         this.paramIsland = this.paramIsland?.copy(

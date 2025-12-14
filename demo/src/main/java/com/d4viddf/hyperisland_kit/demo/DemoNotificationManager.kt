@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit
 import androidx.core.graphics.createBitmap
 import io.github.d4viddf.hyperisland_kit.models.CircularProgressInfo
 import io.github.d4viddf.hyperisland_kit.models.ProgressTextInfo
+import io.github.d4viddf.hyperisland_kit.models.TimerInfo
 
 // --- Resource Keys ---
 private const val PIC_KEY_ICON = "icon_main"
@@ -989,34 +990,71 @@ object DemoNotificationManager {
 
     fun showCircularProgressNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_PROGRESS, context, R.drawable.rounded_cloud_download_24)
-        val builder = HyperIslandNotification.Builder(context, "circle", "Circle")
-            .addPicture(pic)
-            .setChatInfo("Downloading", "75%", PIC_KEY_PROGRESS)
-            .setSmallIslandCircularProgress(PIC_KEY_PROGRESS, 75, "#34C759")
-            .setBigIslandInfo(left = ImageTextInfoLeft(type=1, picInfo=PicInfo(1, "miui.focus.pic_$PIC_KEY_PROGRESS"), textInfo=TextInfo("Downloading", "75%")))
-        notify(context, "Circular Progress", builder)
+        val title = "Circular Progress Demo"
+        val text = "Showing circular progress on island"
+        val progress = 75
+        val progressColor = "#34C759"
+        val progressPicture =
+            HyperPicture(PIC_KEY_PROGRESS, context, R.drawable.rounded_cloud_download_24)
+        val hyperIslandBuilder = HyperIslandNotification.Builder(context, "demoApp", title)
+            .setChatInfo(
+                title = "Downloading...",
+                content = "75% complete",
+                pictureKey = PIC_KEY_PROGRESS
+            ).setBigIslandProgressCircle(
+                PIC_KEY_PROGRESS,
+                "",
+                progress,
+                progressColor,
+                isCCW = true
+            ).setSmallIslandCircularProgress(PIC_KEY_PROGRESS, progress, progressColor, isCCW = true)
+            .addPicture(progressPicture)
+        val resourceBundle = hyperIslandBuilder.buildResourceBundle()
+        val jsonParam = hyperIslandBuilder.buildJsonParam()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(title)
+            .setContentText(text).addExtras(resourceBundle).build()
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java)
+            .notify(getUniqueNotificationId(), notification)
     }
 
     fun showCountdownNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
+        val title = "Countdown Notification"
+        val text = "This demonstrates a countdown timer."
         val countdownTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(15)
-        val pic = HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.rounded_timer_arrow_down_24)
-        val builder = HyperIslandNotification.Builder(context, "countdown", "Timer")
-            .addPicture(pic)
-            .setChatInfo("Timer", "Countdown", PIC_KEY_DEMO_ICON)
-            .setBigIslandCountdown(countdownTime, PIC_KEY_DEMO_ICON)
-            .setSmallIslandIcon(PIC_KEY_DEMO_ICON)
-        notify(context, "Countdown", builder)
+        val countdownTimer =
+            TimerInfo(-1, countdownTime, System.currentTimeMillis(), System.currentTimeMillis())
+        val demoPicture =
+            HyperPicture(PIC_KEY_DEMO_ICON, context, R.drawable.rounded_timer_arrow_down_24)
+        val hyperIslandBuilder = HyperIslandNotification.Builder(context, "demoApp", title)
+            .setChatInfo(
+                title = "Pizza in oven",
+                timer = countdownTimer,
+                pictureKey = PIC_KEY_DEMO_ICON
+            ).setBigIslandCountdown(countdownTime, PIC_KEY_DEMO_ICON)
+            .setSmallIslandIcon(PIC_KEY_DEMO_ICON).addPicture(demoPicture)
+        val resourceBundle = hyperIslandBuilder.buildResourceBundle()
+        val jsonParam = hyperIslandBuilder.buildJsonParam()
+        val notification = NotificationCompat.Builder(context, DemoApplication.DEMO_CHANNEL_ID)
+            .setSmallIcon(R.drawable.rounded_timer_arrow_down_24).setContentTitle(title)
+            .setContentText(text).addExtras(resourceBundle).build()
+        notification.extras.putString("miui.focus.param", jsonParam)
+        context.getSystemService(NotificationManager::class.java)
+            .notify(getUniqueNotificationId(), notification)
     }
 
     fun showCountUpNotification(context: Context) {
         if (!hasNotificationPermission(context)) return
         val pic = HyperPicture(PIC_KEY_COUNTUP, context, R.drawable.rounded_timer_arrow_up_24)
+
         val startTime = System.currentTimeMillis()
+        val counUpTimer = TimerInfo(1, System.currentTimeMillis(), System.currentTimeMillis(),
+            System.currentTimeMillis())
         val builder = HyperIslandNotification.Builder(context, "timer", "Timer")
             .addPicture(pic)
-            .setChatInfo("Timer", "Count Up", PIC_KEY_COUNTUP)
+            .setChatInfo("Timer", "Count Up", PIC_KEY_COUNTUP, timer = counUpTimer)
             .setSmallIslandIcon(PIC_KEY_COUNTUP)
             .setBigIslandCountUp(startTime, PIC_KEY_COUNTUP)
         notify(context, "CountUp", builder)
