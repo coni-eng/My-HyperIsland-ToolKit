@@ -47,7 +47,13 @@ fun DemoListScreen(
         item { Text("Official Templates (1-22)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(vertical = 8.dp)) }
 
         item { DemoCard("1. Weather", "BaseInfo Type 1 (Red Alert)", onClick = { DemoNotificationManager.showTemplate1_Weather(context) }) }
-        item { DemoCard("2. Taxi Call", "BaseInfo Type 2 (Calling)", onClick = { DemoNotificationManager.showTemplate2_Taxi(context) }) }
+        item {
+            DemoCard(
+                title = "2. Payment",
+                description = "BaseInfo Type 2 (Right Icon). Replicates Xiaomi Bill Payment.",
+                onClick = { DemoNotificationManager.showTemplate2_Payment(context) }
+            )
+        }
         item { DemoCard("3. IM / Chat", "ChatInfo (Messaging)", onClick = { DemoNotificationManager.showTemplate3_Chat(context) }) }
         item { DemoCard("4. Taxi Queue", "BaseInfo 2 + MultiProgress", onClick = { DemoNotificationManager.showTemplate4_TaxiQueue(context) }) }
         item { DemoCard("5. Dining Queue", "BaseInfo 1 + ProgressBar", onClick = { DemoNotificationManager.showTemplate5_DiningQueue(context) }) }

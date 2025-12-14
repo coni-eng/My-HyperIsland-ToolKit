@@ -21,6 +21,10 @@ private const val PIC_PREFIX = "miui.focus.pic_"
 //  DATA WRAPPERS
 // ==========================================
 
+/**
+ * Represents a clickable action.
+ * Can be a standard icon button, text-only button, or progress button.
+ */
 data class HyperAction(
     val key: String,
     val title: CharSequence?,
@@ -101,6 +105,7 @@ class HyperIslandNotification private constructor(
     private var hintInfo: HintInfo? = null
     private var stepInfo: StepInfo? = null
     private var textButton: List<TextButtonInfo>? = null
+    private var bannerPicInfo: PicInfo? = null
 
     // Island Configs
     private var islandPriority: Int = 2
@@ -112,12 +117,15 @@ class HyperIslandNotification private constructor(
     private var highlightColor: String? = null
     private var shareData: ShareData? = null
 
+    // General Configs
     private var timeout: Long? = null
     private var enableFloat: Boolean = true
     private var isShowNotification: Boolean = true
     private var logEnabled: Boolean = true
 
+    // Action Lists
     private val actions = mutableListOf<HyperAction>()
+    private val hiddenActions = mutableListOf<HyperAction>() // Registered in Bundle, but not in root JSON 'actions'
     private val pictures = mutableListOf<HyperPicture>()
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -144,7 +152,17 @@ class HyperIslandNotification private constructor(
     fun setSmallWindowTarget(activityName: String) = apply { this.targetPage = activityName }
     fun setScene(sceneName: String) = apply { this.scene = sceneName }
 
+    /**
+     * Adds an action that will appear in the notification's bottom action bar.
+     */
     fun addAction(action: HyperAction) = apply { this.actions.add(action) }
+
+    /**
+     * Adds an action that is registered (so it works) but NOT shown in the bottom action bar.
+     * Use this for actions inside HintInfo, TextButtons, or Island areas.
+     */
+    fun addHiddenAction(action: HyperAction) = apply { this.hiddenActions.add(action) }
+
     fun addPicture(picture: HyperPicture) = apply { this.pictures.add(picture) }
 
     fun setIslandConfig(
@@ -203,6 +221,7 @@ class HyperIslandNotification private constructor(
     }
 
     fun setBaseInfo(
+        // Content
         title: String,
         content: String,
         subTitle: String? = null,
@@ -210,10 +229,30 @@ class HyperIslandNotification private constructor(
         specialTitle: String? = null,
         subContent: String? = null,
         pictureKey: String? = null,
-        type: Int = 1,
-        // Colors
+        type: Int = 1, // 1=Standard, 2=Banner Style
+
+        // Config
+        showDivider: Boolean? = null,
+        showContentDivider: Boolean? = null,
+
+        // Colors (Light)
         colorTitle: String? = null,
+        colorSubTitle: String? = null,
+        colorExtraTitle: String? = null,
+        colorSpecialTitle: String? = null,
         colorSpecialBg: String? = null,
+        colorContent: String? = null,
+        colorSubContent: String? = null,
+
+        // Colors (Dark)
+        colorTitleDark: String? = null,
+        colorSubTitleDark: String? = null,
+        colorExtraTitleDark: String? = null,
+        colorSpecialTitleDark: String? = null,
+        colorContentDark: String? = null,
+        colorSubContentDark: String? = null,
+
+        // Actions
         actionKeys: List<String>? = null
     ) = apply {
         clearOtherTemplates()
@@ -226,8 +265,20 @@ class HyperIslandNotification private constructor(
             content = content,
             subContent = subContent,
             picFunction = pictureKey?.let { PIC_PREFIX + it },
-            colorTitle = colorTitle,
+
+            // Config
+            showDivider = showDivider,
+            showContentDivider = showContentDivider,
+
+            // Colors
+            colorTitle = colorTitle, colorTitleDark = colorTitleDark,
+            colorSubTitle = colorSubTitle, colorSubTitleDark = colorSubTitleDark,
+            colorExtraTitle = colorExtraTitle, colorExtraTitleDark = colorExtraTitleDark,
+            colorSpecialTitle = colorSpecialTitle, colorSpecialTitleDark = colorSpecialTitleDark,
             colorSpecialBg = colorSpecialBg,
+            colorContent = colorContent, colorContentDark = colorContentDark,
+            colorSubContent = colorSubContent, colorSubContentDark = colorSubContentDark,
+
             actions = resolveActionKeys(actionKeys)
         )
     }
@@ -283,93 +334,54 @@ class HyperIslandNotification private constructor(
         )
     }
 
+
     // ==========================================
     //  COMPONENT SETTERS
     // ==========================================
 
     fun setTextButtons(vararg actions: HyperAction) = apply {
-        // [IMPORTANT] Do NOT call clearOtherTemplates() here, as buttons are added TO a template
         this.textButton = actions.map { it.toTextButtonInfo() }
     }
 
     fun setHintInfo(title: String, actionKey: String? = null) = apply {
-        // [IMPORTANT] Do NOT call clearOtherTemplates()
         val actionRef = actionKey?.let { key ->
-            actions.firstOrNull { it.key == key }?.toActionRef(true)
+            // Search in both lists (visible and hidden)
+            (actions + hiddenActions).firstOrNull { it.key == key }?.toActionRef(true)
         }
-        this.hintInfo = HintInfo(
-            type = 1,
-            title = title,
-            actionInfo = actionRef
-        )
+        this.hintInfo = HintInfo(type = 1, title = title, actionInfo = actionRef)
     }
 
-    // Button Component 3 (HintInfo Type 1): Title + Action
     fun setHintAction(title: String, content: String? = null, action: HyperAction) = apply {
-        // [IMPORTANT] Do NOT call clearOtherTemplates()
-        this.hintInfo = HintInfo(
-            type = 1,
-            title = title,
-            content = content,
-            actionInfo = action.toActionRef(true)
-        )
+        this.hintInfo = HintInfo(type = 1, title = title, content = content, actionInfo = action.toActionRef(true))
     }
 
-    // Button Component 2 (HintInfo Type 2): Timer/Text + Action
-    fun setHintTimer(
-        frontText1: String, frontText2: String? = null,
-        mainText1: String? = null, mainText2: String? = null,
-        timer: TimerInfo? = null,
-        action: HyperAction
-    ) = apply {
-        // [IMPORTANT] Do NOT call clearOtherTemplates()
-        this.hintInfo = HintInfo(
-            type = 2,
-            content = frontText1,
-            subContent = frontText2,
-            title = mainText1,
-            subTitle = mainText2,
-            timerInfo = timer,
-            actionInfo = action.toActionRef(true)
-        )
+    fun setHintTimer(frontText1: String, frontText2: String? = null, mainText1: String? = null, mainText2: String? = null, timer: TimerInfo? = null, action: HyperAction) = apply {
+        this.hintInfo = HintInfo(type = 2, content = frontText1, subContent = frontText2, title = mainText1, subTitle = mainText2, timerInfo = timer, actionInfo = action.toActionRef(true))
     }
 
     fun setBackground(picKey: String? = null, color: String? = null, type: Int = 1) = apply {
-        this.bgInfo = BgInfo(
-            type = type,
-            picBg = picKey?.let { PIC_PREFIX + it },
-            colorBg = color
-        )
+        this.bgInfo = BgInfo(type, picKey?.let { PIC_PREFIX + it }, color)
     }
 
     fun setMultiProgress(title: String, progress: Int, color: String? = null, points: Int = 0) = apply {
-        this.multiProgressInfo = MultiProgressInfo(
-            title = title,
-            progress = progress.coerceIn(0, 4),
-            points = points.coerceIn(0, 4),
-            color = color
-        )
+        this.multiProgressInfo = MultiProgressInfo(title, progress.coerceIn(0, 4), points.coerceIn(0, 4), color)
     }
 
     fun setStepProgress(currentStep: Int, totalStep: Int, activeColor: String? = null) = apply {
-        this.stepInfo = StepInfo(
-            currentStep = currentStep,
-            totalStep = totalStep,
-            activeColor = activeColor
-        )
+        this.stepInfo = StepInfo(currentStep, totalStep, activeColor)
     }
 
     fun setProgressBar(progress: Int, color: String? = null, colorEnd: String? = null, picForwardKey: String? = null, picMiddleKey: String? = null, picMiddleUnselectedKey: String? = null, picEndKey: String? = null, picEndUnselectedKey: String? = null) = apply {
-        this.progressBar = ProgressInfo(
-            progress = progress,
-            colorProgress = color,
-            colorProgressEnd = colorEnd,
-            picForward = picForwardKey?.let { PIC_PREFIX + it },
-            picMiddle = picMiddleKey?.let { PIC_PREFIX + it },
-            picMiddleUnselected = picMiddleUnselectedKey?.let { PIC_PREFIX + it },
-            picEnd = picEndKey?.let { PIC_PREFIX + it },
-            picEndUnselected = picEndUnselectedKey?.let { PIC_PREFIX + it }
-        )
+        this.progressBar = ProgressInfo(progress, color, colorEnd, picForwardKey?.let { PIC_PREFIX + it }, picMiddleKey?.let { PIC_PREFIX + it }, picMiddleUnselectedKey?.let { PIC_PREFIX + it }, picEndKey?.let { PIC_PREFIX + it }, picEndUnselectedKey?.let { PIC_PREFIX + it })
+    }
+
+    fun setBannerIcon(type:Int=1,picKey: String) = apply {
+        this.bannerPicInfo = PicInfo(type = type, pic = PIC_PREFIX + picKey)
+    }
+
+    // Alias for compatibility
+    fun setPicInfo(type: Int = 1, picKey: String) = apply {
+        this.bannerPicInfo = PicInfo(type = type, pic = PIC_PREFIX + picKey)
     }
 
     // ==========================================
@@ -380,42 +392,42 @@ class HyperIslandNotification private constructor(
         ensureParamIsland()
         val fixedA = aZone.copy(picInfo = prefixPicInfo(aZone.picInfo))
         val fixedB = bZone?.copy(picInfo = prefixPicInfo(bZone.picInfo))
-        this.paramIsland = this.paramIsland?.copy(
-            islandProperty = 1,
-            smallIslandArea = SmallIslandArea(imageTextInfoLeft = fixedA, imageTextInfoRight = fixedB)
-        )
+        this.paramIsland = this.paramIsland?.copy(islandProperty = 1, smallIslandArea = SmallIslandArea(imageTextInfoLeft = fixedA, imageTextInfoRight = fixedB))
     }
 
     fun setSmallIslandIcon(picKey: String) = apply {
         ensureParamIsland()
-        this.paramIsland = this.paramIsland?.copy(
-            islandProperty = 1,
-            smallIslandArea = SmallIslandArea(picInfo = PicInfo(type = 1, pic = PIC_PREFIX + picKey))
-        )
+        this.paramIsland = this.paramIsland?.copy(islandProperty = 1, smallIslandArea = SmallIslandArea(picInfo = PicInfo(type = 1, pic = PIC_PREFIX + picKey)))
     }
 
     fun setSmallIslandCircularProgress(pictureKey: String, progress: Int, color: String? = null, colorUnReach: String? = null, isCCW: Boolean = false) = apply {
         ensureParamIsland()
-        val combine = CombinePicInfo(
-            picInfo = PicInfo(type = 1, pic = PIC_PREFIX + pictureKey),
-            progressInfo = CircularProgressInfo(progress = progress, colorReach = color, colorUnReach = colorUnReach, isCCW = isCCW)
-        )
-        this.paramIsland = this.paramIsland?.copy(
-            islandProperty = 1,
-            smallIslandArea = SmallIslandArea(combinePicInfo = combine)
-        )
+        val combine = CombinePicInfo(PicInfo(1, PIC_PREFIX + pictureKey), CircularProgressInfo(progress, color, colorUnReach, isCCW))
+        this.paramIsland = this.paramIsland?.copy(islandProperty = 1, smallIslandArea = SmallIslandArea(combinePicInfo = combine))
     }
 
-    fun setBigIslandInfo(left: ImageTextInfoLeft? = null, right: ImageTextInfoRight? = null, actionKeys: List<String>? = null) = apply {
+    fun setBigIslandInfo(
+        left: ImageTextInfoLeft? = null,
+        right: ImageTextInfoRight? = null,
+        centerText: TextInfo? = null,
+        pic: PicInfo? = null,
+        progressText: ProgressTextInfo? = null,
+        actionKeys: List<String>? = null
+    ) = apply {
         ensureParamIsland()
         val actionRefs = actionKeys?.map { SimpleActionRef(ACTION_PREFIX + it) }?.ifEmpty { null }
         val fixedLeft = left?.copy(picInfo = prefixPicInfo(left.picInfo))
         val fixedRight = right?.copy(picInfo = prefixPicInfo(right.picInfo))
+        val fixedPic = prefixPicInfo(pic)
+
         this.paramIsland = this.paramIsland?.copy(
             islandProperty = 1,
             bigIslandArea = BigIslandArea(
                 imageTextInfoLeft = fixedLeft,
                 imageTextInfoRight = fixedRight,
+                textInfo = centerText,
+                picInfo = fixedPic,
+                progressTextInfo = progressText,
                 actions = actionRefs
             )
         )
@@ -423,43 +435,23 @@ class HyperIslandNotification private constructor(
 
     fun setBigIslandFixedWidthDigit(digit: Int, content: String? = null, showHighlight: Boolean = false) = apply {
         ensureParamIsland()
-        this.paramIsland = this.paramIsland?.copy(
-            bigIslandArea = BigIslandArea(
-                fixedWidthDigitInfo = FixedWidthDigitInfo(digit = digit, content = content, showHighlightColor = showHighlight)
-            )
-        )
+        this.paramIsland = this.paramIsland?.copy(bigIslandArea = BigIslandArea(fixedWidthDigitInfo = FixedWidthDigitInfo(digit = digit, content = content, showHighlightColor = showHighlight)))
     }
 
     fun setBigIslandCountdown(countdownTime: Long, pictureKey: String, actionKeys: List<String>? = null) = apply {
         ensureParamIsland()
         val timer = TimerInfo(-1, countdownTime, System.currentTimeMillis(), System.currentTimeMillis())
-        val left = ImageTextInfoLeft(type = 1, picInfo = PicInfo(type = 1, pic = PIC_PREFIX + pictureKey), textInfo = null)
+        val left = ImageTextInfoLeft(1, PicInfo(1, PIC_PREFIX + pictureKey), null, null)
         val actions = actionKeys?.map { SimpleActionRef(ACTION_PREFIX + it) }?.ifEmpty { null }
-
-        this.paramIsland = this.paramIsland?.copy(
-            islandProperty = 1,
-            bigIslandArea = BigIslandArea(
-                imageTextInfoLeft = left,
-                sameWidthDigitInfo = SameWidthDigitInfo(timerInfo = timer),
-                actions = actions
-            )
-        )
+        this.paramIsland = this.paramIsland?.copy(islandProperty = 1, bigIslandArea = BigIslandArea(imageTextInfoLeft = left, sameWidthDigitInfo = SameWidthDigitInfo(timerInfo = timer), actions = actions))
     }
 
     fun setBigIslandCountUp(startTime: Long, pictureKey: String, actionKeys: List<String>? = null) = apply {
         ensureParamIsland()
         val timer = TimerInfo(1, startTime, startTime, System.currentTimeMillis())
-        val left = ImageTextInfoLeft(type = 1, picInfo = PicInfo(type = 1, pic = PIC_PREFIX + pictureKey), textInfo = null)
+        val left = ImageTextInfoLeft(1, PicInfo(1, PIC_PREFIX + pictureKey), null, null)
         val actions = actionKeys?.map { SimpleActionRef(ACTION_PREFIX + it) }?.ifEmpty { null }
-
-        this.paramIsland = this.paramIsland?.copy(
-            islandProperty = 1,
-            bigIslandArea = BigIslandArea(
-                imageTextInfoLeft = left,
-                sameWidthDigitInfo = SameWidthDigitInfo(timerInfo = timer),
-                actions = actions
-            )
-        )
+        this.paramIsland = this.paramIsland?.copy(islandProperty = 1, bigIslandArea = BigIslandArea(imageTextInfoLeft = left, sameWidthDigitInfo = SameWidthDigitInfo(timerInfo = timer), actions = actions))
     }
 
     fun setBigIslandAnim(animSrc: String, isLoop: Boolean = true, effectColor: String? = null) = apply {
@@ -476,7 +468,10 @@ class HyperIslandNotification private constructor(
     // ==========================================
 
     private fun resolveActionKeys(keys: List<String>?): List<HyperActionRef>? {
-        return keys?.mapNotNull { key -> actions.firstOrNull { it.key == key }?.toActionRef(false) }?.ifEmpty { null }
+        // Resolve from both visible and hidden actions
+        return keys?.mapNotNull { key ->
+            (actions + hiddenActions).firstOrNull { it.key == key }?.toActionRef(false)
+        }?.ifEmpty { null }
     }
 
     private fun resolvePicSource(src: String): String {
@@ -504,11 +499,16 @@ class HyperIslandNotification private constructor(
         if (!isSupported(context)) return Bundle()
         val bundle = Bundle()
         val actionsBundle = Bundle()
-        actions.forEach {
+
+        // Register ALL actions (visible + hidden) in the Bundle
+        val allActions = actions + hiddenActions
+
+        allActions.forEach {
             val actionIcon = it.icon ?: createTransparentIcon(context)
             actionsBundle.putParcelable(ACTION_PREFIX + it.key, Notification.Action.Builder(actionIcon, it.title, it.pendingIntent).build())
         }
         bundle.putBundle("miui.focus.actions", actionsBundle)
+
         val picsBundle = Bundle()
         pictures.forEach { picsBundle.putParcelable(PIC_PREFIX + it.key, it.icon) }
         bundle.putBundle("miui.focus.pics", picsBundle)
@@ -528,10 +528,12 @@ class HyperIslandNotification private constructor(
             chatInfo = chatInfo, baseInfo = baseInfo, highlightInfo = highlightInfo, highlightInfoV3 = highlightInfoV3,
             coverInfo = coverInfo, animTextInfo = animTextInfo, iconTextInfo = iconTextInfo,
             // Components
-            paramIsland = finalIsland, actions = actions.map { it.toActionRef(true) }.ifEmpty { null },
+            paramIsland = finalIsland,
+            // Only visible actions go here
+            actions = actions.map { it.toActionRef(true) }.ifEmpty { null },
             textButton = textButton, progressInfo = progressBar, multiProgressInfo = multiProgressInfo, bgInfo = bgInfo,
             hintInfo = hintInfo, stepInfo = stepInfo, timeout = timeout, enableFloat = enableFloat, isShowNotification = isShowNotification,
-            islandFirstFloat = enableFloat
+            islandFirstFloat = enableFloat, bannerPicInfo = this.bannerPicInfo
         )
         val payload = HyperIslandPayload(paramV2, scene = scene)
         val jsonString = jsonSerializer.encodeToString(payload)

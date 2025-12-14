@@ -7,11 +7,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
+import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.drawable.Icon
 import android.widget.Toast
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import io.github.d4viddf.hyperisland_kit.HyperAction
@@ -23,6 +28,8 @@ import io.github.d4viddf.hyperisland_kit.models.PicInfo
 import io.github.d4viddf.hyperisland_kit.models.TextInfo
 import java.util.concurrent.TimeUnit
 import androidx.core.graphics.createBitmap
+import io.github.d4viddf.hyperisland_kit.models.CircularProgressInfo
+import io.github.d4viddf.hyperisland_kit.models.ProgressTextInfo
 
 // --- Resource Keys ---
 private const val PIC_KEY_ICON = "icon_main"
@@ -98,7 +105,7 @@ object DemoNotificationManager {
     private fun createCustomIcon(
         context: Context,
         drawableResId: Int,
-        color: Int,
+        color: Color,
         paddingFactor: Float = 0.25f
     ): Icon {
         val drawable = ContextCompat.getDrawable(context, drawableResId)?.mutate()
@@ -109,7 +116,7 @@ object DemoNotificationManager {
         val canvas = Canvas(bitmap)
         val padding = (size * paddingFactor).toInt()
         drawable.setBounds(padding, padding, size - padding, size - padding)
-        drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN)
+        drawable.setColorFilter(color.toArgb(), PorterDuff.Mode.SRC_IN)
         drawable.draw(canvas)
         return Icon.createWithBitmap(bitmap)
     }
@@ -139,10 +146,14 @@ object DemoNotificationManager {
     // OFFICIAL TEMPLATES (1-22)
     // ============================================================================================
 
-    // 1. Weather (BaseInfo Type 1)
+    // 1. Weather (BaseInfo Type 1 + PicInfo)
     fun showTemplate1_Weather(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
+
+        val weatherIconKey = "weather_icon"
+        // In a real app, use R.drawable.ic_weather_snow or similar
+        val pic = HyperPicture(weatherIconKey, context, R.drawable.snow)
+
         val builder = HyperIslandNotification.Builder(context, "weather", "Weather")
             .addPicture(pic)
             .setBaseInfo(
@@ -151,61 +162,181 @@ object DemoNotificationManager {
                 subTitle = "Red Alert",
                 content = "Chaoyang District",
                 subContent = "Tonight to Tomorrow",
-                pictureKey = PIC_KEY_ICON,
+                //pictureKey = PIC_KEY_ICON, // Removing this from BaseInfo to rely on the dedicated PicInfo component below
                 colorTitle = "#FF0000"
             )
-            .setSmallIslandIcon(PIC_KEY_ICON)
+            // [ADDED] Set the dedicated Recognition Graphic Component (Image on Right)
+            .setPicInfo(2,weatherIconKey)
+            // Island Config
+            .setSmallIslandIcon(weatherIconKey)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = weatherIconKey),
+                    textInfo = TextInfo(title = "Heavy Snow")
+                )
+            )
+
         notify(context, "Template 1: Weather", builder)
     }
 
-    // 2. Taxi (BaseInfo Type 2)
-    fun showTemplate2_Taxi(context: Context) {
+    // ============================================================================================
+    // OFFICIAL TEMPLATE 2 (Bill Payment)
+    // ============================================================================================
+
+    fun showTemplate2_Payment(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.rounded_arrow_outward_24)
-        val builder = HyperIslandNotification.Builder(context, "taxi", "Taxi")
-            .addPicture(pic)
+
+        // 1. Icon (Usually App Icon or Service Icon)
+        val iconKey = "pay_icon"
+        // Using a generic icon, replace with specific 'bill' or 'phone' icon if available
+        val iconPic = HyperPicture(iconKey, context, R.drawable.xiaomi)
+
+        val builder = HyperIslandNotification.Builder(context, "payment", "Bill")
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            .addPicture(iconPic)
+
+            // 2. Base Info (Template 2)
+            // Title: Amount / Action
+            // Content: Description
+            // SubTitle: App Name / Source
             .setBaseInfo(
                 type = 2,
-                title = "Calling...",
-                content = "Queue Position: 5",
-                subContent = "Est. 7 mins",
-                pictureKey = PIC_KEY_ICON
+                title = "129.00",
+                content = "September Phone Bill",
+                subTitle = "Mi Pay",
             )
-            .setSmallIslandIcon(PIC_KEY_ICON)
-        notify(context, "Template 2: Taxi", builder)
+
+            // 3. Banner Icon (Root level PicInfo)
+            // This ensures the icon appears on the right side in the notification shade (Template 2 style)
+            .setPicInfo(1,iconKey)
+
+            // 4. Island Config
+            .setSmallIslandIcon(iconKey)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = iconKey),
+                    textInfo = TextInfo(title = "Payment", content = "129.00")
+                )
+            )
+
+        notify(context, "Template 2: Payment", builder)
     }
 
-    // 3. IM/Chat (ChatInfo)
+    // 3. IM/Chat (ChatInfo) - Updated with Avatar, Pkg Icon, and Actions
     fun showTemplate3_Chat(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val avatar = HyperPicture(PIC_KEY_AVATAR, context, R.drawable.rounded_medication_24)
+
+        // 1. Define Assets
+        // Avatar (Person)
+        val avatarKey = "avatar_person"
+        val avatarPic = HyperPicture(avatarKey, context, R.drawable.aidan) // Replace with R.drawable.person_avatar if available
+
+        // Action Icons
+        val callIcon = createCustomIcon(context, R.drawable.videocam, Color.White, 0.2f)
+
+        // 2. Define Actions
+        val actionAnswer = HyperAction(
+            key = "answer",
+            title = "Answer",
+            icon = callIcon, // Icon for the button
+            pendingIntent = createAppOpenIntent(context, 1),
+            actionIntentType = 1,
+            actionBgColor = "#34C759", // Green
+            titleColor = "#FFFFFF"
+        )
+
+        // 3. Build Notification
         val builder = HyperIslandNotification.Builder(context, "chat", "Message")
-            .addPicture(avatar)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            .addPicture(avatarPic)
+            .addAction(actionAnswer)
+
+            // ChatInfo Configuration
             .setChatInfo(
-                title = "John Doe",
-                content = "Invited you to a video call",
-                pictureKey = PIC_KEY_AVATAR
+                title = "Sarah",
+                content = "Incoming Video Call...",
+                pictureKey = avatarKey,
+                actionKeys = listOf("answer"), // Link actions to the template
             )
-            .setSmallIslandIcon(PIC_KEY_AVATAR)
+
+            // Island Configuration
+            .setSmallIslandIcon(avatarKey)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = avatarKey),
+                    textInfo = TextInfo(title = "", content = "")
+                ),
+                right = ImageTextInfoRight(
+                    type = 2,
+                    textInfo = TextInfo(title = "Sarah")
+                ),
+                // Show actions in Big Island too
+                actionKeys = listOf("answer")
+            )
+
         notify(context, "Template 3: Chat", builder)
     }
 
-    // 4. Taxi Queue (BaseInfo 2 + Progress)
+    // 4. Taxi/Delivery (BaseInfo 2 + Icon Progress Bar)
     fun showTemplate4_TaxiQueue(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
-        val builder = HyperIslandNotification.Builder(context, "taxi", "Queue")
-            .addPicture(pic)
+
+        // 1. Define Assets
+        // Main Icon (Left side of BaseInfo)
+        val brandPic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
+
+        // Progress Bar Icons
+        // 'picForward': The moving icon (Car/Bike)
+        val carPic = HyperPicture(PIC_KEY_CAR,context, R.drawable.taxi)
+
+        // 'picEnd': The destination icon (Flag/Home)
+        val flagIcon = createCustomIcon(context, android.R.drawable.ic_menu_myplaces, Color(0xFF007AFF))
+        val flagPic = HyperPicture(PIC_KEY_FLAG_SEL, flagIcon)
+
+        // 'picEndUnselected': Destination icon when not reached (Gray)
+        val flagGrayIcon = createCustomIcon(context, android.R.drawable.ic_menu_myplaces, Color.LightGray)
+        val flagUnselPic = HyperPicture(PIC_KEY_FLAG_UNSEL, flagGrayIcon)
+
+        val builder = HyperIslandNotification.Builder(context, "taxi", "Delivery")
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            // Add all pictures to the bundle
+            .addPicture(brandPic)
+            .addPicture(carPic)
+            .addPicture(flagPic)
+            .addPicture(flagUnselPic)
+
+            // 2. Base Info (Template 2)
             .setBaseInfo(
                 type = 2,
-                title = "Queueing",
-                content = "Pos 5",
-                subContent = "Est 7m",
-                pictureKey = PIC_KEY_ICON
+                title = "Arriving in 5 mins",
+                content = "Distance: 1.2km",
+                subTitle = "Taxi",
             )
-            .setMultiProgress(title = "Finding Driver...", progress = 1, points = 0, color = "#007AFF")
+
+            // 3. Progress Bar (With Icons)
+            .setProgressBar(
+                progress = 45,
+                color = "#007AFF",
+                colorEnd = "#347a60",
+                picForwardKey = PIC_KEY_CAR,       // The Car
+                picEndKey = PIC_KEY_FLAG_SEL,      // Active Flag
+                picEndUnselectedKey = PIC_KEY_FLAG_UNSEL // Inactive Flag
+            )
+
+            // 4. Island Configuration
             .setSmallIslandIcon(PIC_KEY_ICON)
-        notify(context, "Template 4: Taxi Queue", builder)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = PIC_KEY_ICON),
+                    textInfo = TextInfo(title = "Arriving", content = "5 mins")
+                )
+            )
+
+        notify(context, "Template 4: Taxi/Delivery", builder)
     }
 
     // 5. Dining Queue (BaseInfo 1 + Progress)
@@ -220,55 +351,167 @@ object DemoNotificationManager {
                 subTitle = "6 Tables",
                 content = "Haidilao",
                 subContent = "Wait 20m",
-                pictureKey = PIC_KEY_ICON
             )
+            .setPicInfo(2,PIC_KEY_ICON)
             .setProgressBar(progress = 30, color = "#FF8514")
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(type = 1, picInfo = PicInfo(type = 1, pic = PIC_KEY_ICON))
+            )
             .setSmallIslandIcon(PIC_KEY_ICON)
         notify(context, "Template 5: Dining Queue", builder)
     }
 
-    // 6. Parking (BaseInfo 2 + Progress)
+    // 6. Parking (BaseInfo 2 + Progress + Colored Time)
     fun showTemplate6_Parking(context: Context) {
         if (!hasNotificationPermission(context)) return
+
+        // 1. Icon (Parking P or Brand Logo)
         val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
+
         val builder = HyperIslandNotification.Builder(context, "parking", "Parking")
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
             .addPicture(pic)
+
+            // 2. Base Info (Type 2)
+            // We highlight the "Parked 10m" (subContent) in Green
             .setBaseInfo(
                 type = 2,
                 title = "Entered",
                 content = "Charge starts 16:00",
                 subContent = "Parked 10m",
-                pictureKey = PIC_KEY_ICON
+                colorSubContent = "#34C759" // <--- Green Color for Time/Duration
             )
+            .setPicInfo(2,PIC_KEY_ICON)
+
+            // 3. Progress Bar (Green)
             .setProgressBar(progress = 15, color = "#34C759")
+
+            // 4. Island Config
             .setSmallIslandIcon(PIC_KEY_ICON)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = "miui.focus.pic_$PIC_KEY_ICON"),
+                    textInfo = TextInfo(title = "Parking", content = "10m")
+                )
+            )
+
         notify(context, "Template 6: Parking", builder)
     }
 
-    // 7. Upload (ChatInfo + Progress)
+    // 7. Upload (ChatInfo + Progress + Share + Banner Icon)
     fun showTemplate7_Upload(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
-        val builder = HyperIslandNotification.Builder(context, "upload", "Upload")
-            .addPicture(pic)
-            .setChatInfo("Uploading...", "201MB / 233MB", PIC_KEY_ICON)
+
+        // 1. Assets
+        // Left: File Preview (Rounded Image)
+        val fileKey = "file_preview"
+        val roundedFileIcon = createRoundedBitmapIcon(context, R.drawable.starry_pplaceholder, cornerRadius = 32f)
+        val filePic = HyperPicture(fileKey, roundedFileIcon)
+
+        // Right: Status Icon (Cloud Upload)
+        val statusKey = "upload_status"
+        // Fixed: Use Color.parseColor for standard Android Views
+        val cloudIcon = createCustomIcon(context, android.R.drawable.stat_sys_upload, Color(0xff007AFF))
+        val statusPic = HyperPicture(statusKey, cloudIcon)
+
+        val builder = HyperIslandNotification.Builder(context, "upload", "File Upload")
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            .addPicture(filePic)
+            .addPicture(statusPic)
+
+            // 2. ChatInfo (Title/Content)
+            .setChatInfo("Uploading...", "201MB / 233MB", pictureKey = fileKey)
+
+            // 3. Banner Icon (Root PicInfo)
+            .setPicInfo(2,statusKey)
+
+            // 4. Progress Bar (Notification Shade)
             .setProgressBar(progress = 86, color = "#34C759")
-            .setSmallIslandCircularProgress(PIC_KEY_ICON, 86, "#34C759")
-            .setBigIslandInfo(left = ImageTextInfoLeft(type = 1, picInfo = PicInfo(type = 1, pic = "miui.focus.pic_$PIC_KEY_ICON"), textInfo = TextInfo("Uploading")))
+
+            // 5. Island Configuration
+            .setShareData(
+                title = "design_draft.pdf",
+                content = "233 MB",
+                picKey = fileKey,
+                shareContent = "Sharing File...",
+                sharePicKey = fileKey
+            )
+            .setIslandConfig(priority = 2, dismissible = true)
+
+            // 6. Island Visuals
+            // Small Island: File icon with circular progress around it
+            .setSmallIslandCircularProgress(pictureKey = fileKey, progress = 86, color = "#34C759")
+
+            // Big Island:
+            // Left = File Icon + Name
+            // Right = Circular Progress + Percentage
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    // [FIX] Pass RAW KEY. The library adds "miui.focus.pic_" automatically.
+                    picInfo = PicInfo(type = 1, pic = fileKey),
+                    textInfo = TextInfo(title = "design.pdf")
+                ),
+                progressText = ProgressTextInfo(
+                    CircularProgressInfo(progress = 86, colorReach = "#34C759", isCCW = true)
+                )
+
+
+            )
+
         notify(context, "Template 7: Upload", builder)
     }
 
-    // 8. Coupon (ChatInfo + Button Component 3/HintInfo)
+    // 8. Coupon (ChatInfo + HintInfo with Text Button)
     fun showTemplate8_Coupon(context: Context) {
         if (!hasNotificationPermission(context)) return
+
+        // 1. Assets
         val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
-        val action = HyperAction("view", "View", null, createAppOpenIntent(context), 1)
+
+        // 2. Action for the Hint (The "View" button)
+        // We give it a background color (#FF8514 Orange) so it looks like a button inside the hint bar
+        val actionKey = "view_coupon"
+        val action = HyperAction(
+            key = actionKey,
+            title = "View",
+            icon = null, // Text-only button
+            pendingIntent = createAppOpenIntent(context),
+            actionIntentType = 1,
+            actionBgColor = "#FF8514", // Orange background
+            titleColor = "#FFFFFF"     // White text
+        )
 
         val builder = HyperIslandNotification.Builder(context, "coupon", "Coupon")
-            .addPicture(pic) // NO addAction() to avoid duplication in bottom row
-            .setChatInfo("Coffee Shop", "Buy 1 Get 1 Free", PIC_KEY_ICON)
-            .setHintAction("Coupon Available", action = action) // Top Button
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            .addPicture(pic)
+            .addHiddenAction(action) // Must register action to use its key
+
+            // 3. Main Content (ChatInfo)
+            .setChatInfo(
+                title = "Coffee House",
+                content = "Buy 1 Get 1 Free on all Lattes!",
+                pictureKey = PIC_KEY_ICON
+            )
+
+            // 4. Hint Info (Top Bar)
+            // Displays "Coupon Available" on the left, and the "View" action button on the right
+            .setHintInfo(
+                title = "Coupon Available",
+                actionKey = actionKey
+            )
+
+            // 5. Island Config
             .setSmallIslandIcon(PIC_KEY_ICON)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = PIC_KEY_ICON), // Raw key
+                    textInfo = TextInfo(title = "Coupon", content = "BOGO Free")
+                )
+            )
+
         notify(context, "Template 8: Coupon", builder)
     }
 
@@ -296,23 +539,60 @@ object DemoNotificationManager {
         notify(context, "Template 9: Movie Ticket", builder)
     }
 
-    // 10. Pickup (BaseInfo 2 + Button Component 3/HintInfo)
+    // 10. Pickup (BaseInfo 2 + HintInfo with Colored Action)
     fun showTemplate10_Pickup(context: Context) {
         if (!hasNotificationPermission(context)) return
+
+        // 1. Assets
         val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
-        val action = HyperAction("code", "Code", null, createAppOpenIntent(context), 1)
+
+        // 2. Action for the Hint (The "Code" button)
+        val actionKey = "pickup_code"
+        val action = HyperAction(
+            key = actionKey,
+            title = "Code",
+            icon = null, // Text-only button
+            pendingIntent = createAppOpenIntent(context),
+            actionIntentType = 1,
+            actionBgColor = "#007AFF", // Blue background
+            titleColor = "#FFFFFF"     // White text
+        )
 
         val builder = HyperIslandNotification.Builder(context, "pickup", "Package")
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
             .addPicture(pic)
+
+            // [IMPORTANT] Register as hidden so it doesn't duplicate at the bottom
+            .addHiddenAction(action)
+
+            // 3. Base Info (Type 2 - Banner Style)
             .setBaseInfo(
                 type = 2,
                 title = "Ready for Pickup",
                 content = "Cainiao Station",
-                subContent = "2 Packages",
+                subTitle = "2 Packages",
                 pictureKey = PIC_KEY_ICON
             )
-            .setHintAction("Pickup Code", action = action)
+
+            // 4. Banner Icon (Right side image)
+            .setPicInfo(2,PIC_KEY_ICON)
+
+            // 5. Hint Info (Top Bar) linking to the colored action
+            .setHintInfo(
+                title = "Pickup Code",
+                actionKey = actionKey
+            )
+
+            // 6. Island Config
             .setSmallIslandIcon(PIC_KEY_ICON)
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = PIC_KEY_ICON), // Raw key
+                    textInfo = TextInfo(title = "Pickup", content = "Code Available")
+                )
+            )
+
         notify(context, "Template 10: Pickup", builder)
     }
 
@@ -330,17 +610,80 @@ object DemoNotificationManager {
         notify(context, "Template 11: Sports", builder)
     }
 
-    // 12. Call (ChatInfo + Button Component 1/Standard Actions)
+    // 12. Call (ChatInfo + Custom Icon Buttons)
     fun showTemplate12_Call(context: Context) {
         if (!hasNotificationPermission(context)) return
-        val pic = HyperPicture(PIC_KEY_ICON, context, R.drawable.ic_launcher_foreground)
-        val actDecline = HyperAction("decline", "Decline", null, createAppOpenIntent(context), 1, actionBgColor = "#FF3B30", titleColor = "#FFFFFF")
-        val actAnswer = HyperAction("answer", "Answer", null, createAppOpenIntent(context), 1, actionBgColor = "#34C759", titleColor = "#FFFFFF")
 
+        // 1. Assets
+        // Avatar
+        val avatarKey = "caller_avatar"
+        val avatarPic = HyperPicture(avatarKey, context, R.drawable.aidan) // Replace with person image
+
+        // 2. Generate Custom Call Buttons (Icon with Circular Background)
+
+        // Decline Icon (Red Background + White 'X')
+        val declineIcon = createRoundedBackgroundIcon(
+            context,
+            android.R.drawable.ic_menu_call,
+            iconColor = Color.White.toArgb(),
+            backgroundColor = Color(0xffFF3B30).toArgb(), // Red
+            paddingFactor = 0.3f
+        )
+
+        // Answer Icon (Green Background + White Phone)
+        val answerIcon = createRoundedBackgroundIcon(
+            context,
+            android.R.drawable.ic_menu_call,
+            iconColor = Color.White.toArgb(),
+            backgroundColor = Color(0xff34C759).toArgb(), // Green
+            paddingFactor = 0.3f
+        )
+
+        // 3. Define Actions using the generated icons
+        val actDecline = HyperAction(
+            key = "decline",
+            title = "Decline",
+            icon = declineIcon,
+            pendingIntent = createAppOpenIntent(context, 1),
+            actionIntentType = 1
+        )
+
+        val actAnswer = HyperAction(
+            key = "answer",
+            title = "Answer",
+            icon = answerIcon,
+            pendingIntent = createAppOpenIntent(context, 2),
+            actionIntentType = 1
+        )
+
+        // 4. Build Notification
         val builder = HyperIslandNotification.Builder(context, "call", "Call")
-            .addPicture(pic).addAction(actDecline).addAction(actAnswer)
-            .setChatInfo("John Doe", "Incoming Video Call", PIC_KEY_ICON)
-            .setSmallIslandIcon(PIC_KEY_ICON)
+            .setSmallWindowTarget("${context.packageName}.MainActivity")
+            .addPicture(avatarPic)
+            .addAction(actDecline)
+            .addAction(actAnswer)
+
+            // ChatInfo: Standard Call Layout
+            .setChatInfo(
+                title = "John Doe",
+                content = "Incoming Video Call",
+                pictureKey = avatarKey
+            )
+
+            // Island Config
+            .setSmallIslandIcon(avatarKey)
+
+            // Big Island: Avatar Left + Call Status Right
+            .setBigIslandInfo(
+                left = ImageTextInfoLeft(
+                    type = 1,
+                    picInfo = PicInfo(type = 1, pic = avatarKey),
+                    textInfo = TextInfo(title = "John Doe", content = "Mobile")
+                ),
+                // Important: Actions appear in Big Island automatically if added via addAction
+                actionKeys = listOf("decline", "answer")
+            )
+
         notify(context, "Template 12: Call", builder)
     }
 
@@ -701,4 +1044,34 @@ object DemoNotificationManager {
         notification.extras.putString("miui.focus.param", builder.buildJsonParam())
         context.getSystemService(NotificationManager::class.java).notify(notificationId, notification)
     }
+}
+
+/**
+ * Creates an Icon from a drawable resource with rounded corners.
+ * Ideal for File Previews, Album Art, or User Avatars.
+ */
+private fun createRoundedBitmapIcon(context: Context, drawableResId: Int, cornerRadius: Float = 24f): Icon {
+    val drawable = ContextCompat.getDrawable(context, drawableResId)
+        ?: return Icon.createWithResource(context, drawableResId)
+
+    val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 128
+    val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 128
+
+    // 1. Draw source drawable to bitmap
+    val sourceBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val sourceCanvas = Canvas(sourceBitmap)
+    drawable.setBounds(0, 0, sourceCanvas.width, sourceCanvas.height)
+    drawable.draw(sourceCanvas)
+
+    // 2. Draw rounded rect with bitmap shader
+    val outputBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val outputCanvas = Canvas(outputBitmap)
+    val paint = Paint().apply {
+        isAntiAlias = true
+        shader = BitmapShader(sourceBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    }
+    val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+    outputCanvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint)
+
+    return Icon.createWithBitmap(outputBitmap)
 }
