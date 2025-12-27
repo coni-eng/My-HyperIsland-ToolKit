@@ -300,9 +300,7 @@ object DemoNotificationManager {
                 right = ImageTextInfoRight(
                     type = 2,
                     textInfo = TextInfo(title = "Sarah")
-                ),
-                // Show actions in Big Island too
-                actionKeys = listOf("answer")
+                )
             )
 
         notify(context, "Template 3: Chat", builder)
@@ -561,7 +559,7 @@ object DemoNotificationManager {
                 subContent = "Row 4 Seat 6",
                 pictureKey = PIC_KEY_ICON
             )
-            .setBackground("poster","#6b504c", type = 2)
+            .setBackground("poster","#17222c", type = 2)
             .setHintTimer(frontText1 = "Start", mainText1 = "19:20", action = action)
             .setSmallIsland("poster")
         notify(context, "Template 9: Movie Ticket", builder)
@@ -708,8 +706,6 @@ object DemoNotificationManager {
                     picInfo = PicInfo(type = 1, pic = avatarKey),
                     textInfo = TextInfo(title = "John Doe", content = "Mobile")
                 ),
-                // Important: Actions appear in Big Island automatically if added via addAction
-                actionKeys = listOf("decline", "answer")
             )
 
         notify(context, "Template 12: Call", builder)
@@ -858,7 +854,7 @@ object DemoNotificationManager {
         val action2 = HyperAction(ACTION_KEY_TEST_2, "Reject", null, createAppOpenIntent(context), 1, actionBgColor = "#FF3B30", titleColor = "#FFFFFF")
 
         val builder = HyperIslandNotification.Builder(context, "textbtn", "Buttons")
-            .addPicture(pic).addAction(action1).addAction(action2)
+            .addPicture(pic)
             .setBaseInfo("Text Buttons", "Colored actions", pictureKey = PIC_KEY_ICON, type = 2)
             .setTextButtons(action1, action2)
             .setSmallIsland(PIC_KEY_ICON)
