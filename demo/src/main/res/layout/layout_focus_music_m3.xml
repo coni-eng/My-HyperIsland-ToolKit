@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -68,7 +69,8 @@
             android:background="@android:color/transparent"
             android:contentDescription="Previous"
             android:src="@drawable/previous"
-            android:tint="#E6E1E5" />
+            android:tint="#E6E1E5"
+            tools:ignore="UseAppTint" />
 
         <ImageButton
             android:id="@+id/btn_play"

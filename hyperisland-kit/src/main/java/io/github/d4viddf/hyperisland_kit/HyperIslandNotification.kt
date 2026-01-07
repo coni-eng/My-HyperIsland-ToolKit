@@ -153,6 +153,10 @@ class HyperIslandNotification private constructor(
     private var isShowNotification: Boolean = true
     private var logEnabled: Boolean = true
 
+    // Time visibility (v0.9.4) - optional, default off
+    private var showTime: Boolean = false
+    private var notificationTimestamp: Long? = null
+
     private var islandFirstFloat: Boolean = true
     private var padding: Boolean? = null
     private var showSmallIcon: Boolean? = null
@@ -215,6 +219,17 @@ class HyperIslandNotification private constructor(
 
     /** If false, the notification will NOT appear in the notification shade (Island only). */
     fun setShowNotification(show: Boolean) = apply { this.isShowNotification = show }
+
+    /**
+     * Enables time visibility on the notification island (v0.9.4).
+     * When enabled, displays a relative time label (e.g., "now", "1m", "5m").
+     * @param show If true, shows the time label. Default is false.
+     * @param timestamp Optional epoch millis for time calculation. If null, uses current time.
+     */
+    fun setShowTime(show: Boolean, timestamp: Long? = null) = apply {
+        this.showTime = show
+        this.notificationTimestamp = timestamp
+    }
 
     /** Sets the target activity (Package + Class Name) to open in a small freeform window on tap. */
     fun setSmallWindowTarget(activityName: String) = apply { this.targetPage = activityName }
@@ -382,17 +397,51 @@ class HyperIslandNotification private constructor(
         type: Int = 1,
         showDivider: Boolean? = null,
         showContentDivider: Boolean? = null,
-        colorTitle: String? = null, colorSubTitle: String? = null, colorExtraTitle: String? = null, colorSpecialTitle: String? = null, colorSpecialBg: String? = null, colorContent: String? = null, colorSubContent: String? = null,
-        colorTitleDark: String? = null, colorSubTitleDark: String? = null, colorExtraTitleDark: String? = null, colorSpecialTitleDark: String? = null, colorContentDark: String? = null, colorSubContentDark: String? = null,
+        showTime: Boolean? = null,
+        timestamp: Long? = null,
+        colorTitle: String? = null,
+        colorSubTitle: String? = null,
+        colorExtraTitle: String? = null,
+        colorSpecialTitle: String? = null,
+        colorSpecialBg: String? = null,
+        colorContent: String? = null,
+        colorSubContent: String? = null,
+        colorTitleDark: String? = null,
+        colorSubTitleDark: String? = null,
+        colorExtraTitleDark: String? = null,
+        colorSpecialTitleDark: String? = null,
+        colorContentDark: String? = null,
+        colorSubContentDark: String? = null,
         actionKeys: List<String>? = null
     ) = apply {
         clearOtherTemplates()
         this.baseInfo = BaseInfo(
-            type, title, subTitle, extraTitle, specialTitle, content, subContent, pictureKey?.let { PIC_PREFIX + it },
-            showDivider, showContentDivider,
-            colorTitle, colorSubTitle, colorExtraTitle, colorSpecialTitle, colorSpecialBg, colorContent, colorSubContent,
-            colorTitleDark, colorSubTitleDark, colorExtraTitleDark, colorSpecialTitleDark, colorContentDark, colorSubContentDark,
-            resolveActionKeys(actionKeys)
+            type = type,
+            title = title,
+            subTitle = subTitle,
+            extraTitle = extraTitle,
+            specialTitle = specialTitle,
+            content = content,
+            subContent = subContent,
+            picFunction = pictureKey?.let { PIC_PREFIX + it },
+            showDivider = showDivider,
+            showContentDivider = showContentDivider,
+            showTime = showTime,
+            timestamp = timestamp,
+            colorTitle = colorTitle,
+            colorSubTitle = colorSubTitle,
+            colorExtraTitle = colorExtraTitle,
+            colorSpecialTitle = colorSpecialTitle,
+            colorSpecialBg = colorSpecialBg,
+            colorContent = colorContent,
+            colorSubContent = colorSubContent,
+            colorTitleDark = colorTitleDark,
+            colorSubTitleDark = colorSubTitleDark,
+            colorExtraTitleDark = colorExtraTitleDark,
+            colorSpecialTitleDark = colorSpecialTitleDark,
+            colorContentDark = colorContentDark,
+            colorSubContentDark = colorSubContentDark,
+            actions = resolveActionKeys(actionKeys)
         )
     }
 

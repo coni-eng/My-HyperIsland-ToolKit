@@ -19,6 +19,11 @@ data class BaseInfo(
     val showDivider: Boolean? = null,
     val showContentDivider: Boolean? = null,
 
+    // Time visibility (v0.9.4) - optional, default off
+    // When true, displays a relative time label (e.g., "now", "1m", "5m")
+    val showTime: Boolean? = null,
+    val timestamp: Long? = null, // Epoch millis for time calculation (PII-safe)
+
     // Colors
     val colorTitle: String? = null,
     val colorTitleDark: String? = null,
